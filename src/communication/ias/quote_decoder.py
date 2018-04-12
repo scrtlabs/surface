@@ -1,14 +1,10 @@
 import base64
 import binascii
-import requests
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives import hashes
+import OpenSSL
+import json
 
 
 class Quote(object):
-
 
     def __init__(self, quote=None, response_report=None):
         """
@@ -23,13 +19,17 @@ class Quote(object):
         :param response_report: a json response from the Enigma node.
         :type response_report: dict
         """
-        try:
-            quote_bytes = base64.b64decode(quote)
-        except binascii.Error:
-            quote_bytes = quote
+        if quote is not None:
+            try:
+                quote_bytes = base64.b64decode(quote)
+            except binascii.Error:
+                quote_bytes = quote
 
-        if len(quote_bytes) == 432:
-            self._build_quote(quote_bytes)
+            if len(quote_bytes) == 432:
+                print(quote_bytes.hex())
+                self._build_quote(quote_bytes)
+            else:
+                raise RuntimeError
 
         else:
             if self.verify_report(response_report):
@@ -43,9 +43,23 @@ class Quote(object):
         object.__setattr__(self, 'signature', quote_bytes[436:])
 
     @classmethod
-    def verify_report(cls, response_report, certs):
-        report_cert = x509.load_pem_x509_certificate(response_report['report_cert'], default_backend())
-        # TODO: verify the chain of trust, from report_cert -> ca_cert -> Intel-cert -> (Trusted Root?)
+    def verify_report(cls, response_report):
+        report_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, response_report['report_cert'])
+        ca_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, response_report['ca_cert'])
+        trusted_store = OpenSSL.crypto.X509Store()
+        trusted_store.add_cert(ca_cert)
+        store_context = OpenSSL.crypto.X509StoreContext(trusted_store, report_cert)
+        try:
+            store_context.verify_certificate()
+        except OpenSSL.crypto.X509StoreContextError:
+            return False
+        try:
+            OpenSSL.crypto.verify(report_cert, response_report['sig'],
+                                  json.dumps(response_report['Report'], separators=(',', ':')).encode('utf-8'),
+                                  'sha256')
+        except OpenSSL.crypto.Error:
+            return False
+        return True
 
     def __setattr__(self, key, value):
         raise ImmutableException('This object is immutable, the attributes cannot be changed')
@@ -90,17 +104,3 @@ class _ReportBody(object):
 
 class ImmutableException(Exception):
     pass
-
-
-isvEnclaveQuoteBody = '''AgAAAM0LAAAGAAUAAAAAABYB+Vw5ueowf+qruQGtw+6/4XvNUSdcc8LqIanvG9qRAgb//wEBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAIGdkKKUpaKZVCtSUA9nc6C5QZBHnpDun3Neu50eDEl2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADmErAJmr/gDxSmWSY1CQFMHeugyk3piROWmu+owmjSzgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADz/xrNJbdc925MpCExmRUftkGTu8UkMCST04dEcIwDcgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'''
-
-a = Quote(isvEnclaveQuoteBody)
-a = Quote()
-print(a)
-print(a.signature_len)
-print(len(a.signature))
-a.report_body.reserved = 5
-print(a.body.basename)
-# print(a.version)
-pass
-

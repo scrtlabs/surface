@@ -71,6 +71,8 @@ def test_get_task():
 
 @pytest.mark.order6
 def test_solve_task():
+    # attribDict = w3.eth.account.sign(message_text="hello", private_key=decryptedPrivateKey)
+
     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
     tx = worker.solve_task(SECRET_CONTRACT, 0, args, PROOF)
     event = event_data(contract, tx, 'SolveTask')

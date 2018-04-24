@@ -13,7 +13,7 @@ class Worker:
         log.info('registering account: {}'.format(self.account))
         tx = self.contract.functions.register(
             url, pkey, fee
-        ).transact({'from': self.account})
+        ).transact({'from': self.account, 'value': 1})
 
         return tx
 

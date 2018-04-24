@@ -71,6 +71,7 @@ def test_get_task():
 
 @pytest.mark.order6
 def test_solve_task():
-    tx = worker.solve_task(SECRET_CONTRACT, 0, PROOF)
+    args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
+    tx = worker.solve_task(SECRET_CONTRACT, 0, args, PROOF)
     event = event_data(contract, tx, 'SolveTask')
     assert event.args._success

@@ -16,5 +16,6 @@ def test_verification():
 
     assert quote_decoder.Quote.verify_report(RESPONSE)
 
-#TODO: Add a quote test
-#TODO: add a failed verification
+
+# TODO: Add a quote test
+# TODO: add a failed verification

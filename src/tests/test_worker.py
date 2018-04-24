@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from config import ACCOUNTS, PASSPHRASE
+from config import ACCOUNTS, PASSPHRASE, KEYS
 from worker import Worker
-from utils import w3, event_data, enigma_contract
+from utils import w3, event_data, enigma_contract, sign_proof
 
 DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
 
@@ -16,12 +16,14 @@ SECRET_CONTRACT = w3.toChecksumAddress(
     '0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f'
 )
 QUOTE = 'AgAAAMoKAAAGAAUAAAAAABYB+Vw5ueowf+qruQGtw+6ELd5kX5SiKFr7LkiVsXcAAgL/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAFC0Z2msSprkA6a+b16ijMOxEQd1Q3fiq2SpixYLTEv9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACD1xnnferKFHD2uvYqTXdDA8iZ22kCD5xw7h38CMfOngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqAIAAA=='
-PROOF = b'AgAAAMoKAAAGAAUAAAAAABYB+'
 FEE = 10
 
 accounts = []
-for account in ACCOUNTS:
-    accounts.append(w3.toChecksumAddress(account))
+keys = dict()
+for index, account in enumerate(ACCOUNTS):
+    addr = w3.toChecksumAddress(account)
+    accounts.append(addr)
+    keys[addr] = KEYS[index]
 
 for account in accounts:
     w3.personal.unlockAccount(account, PASSPHRASE)
@@ -71,9 +73,21 @@ def test_get_task():
 
 @pytest.mark.order6
 def test_solve_task():
-    # attribDict = w3.eth.account.sign(message_text="hello", private_key=decryptedPrivateKey)
+    key = keys[worker.account]
 
     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
-    tx = worker.solve_task(SECRET_CONTRACT, 0, args, PROOF)
+    bytecode = w3.eth.getCode(
+        w3.toChecksumAddress(SECRET_CONTRACT)
+    )
+    results = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
+    proof = sign_proof(
+        secret_contract=SECRET_CONTRACT,
+        callable=b'mixAddresses',
+        args=args,
+        bytecode=bytecode,
+        results=results,
+        key=key,
+    )
+    tx = worker.solve_task(SECRET_CONTRACT, 0, args, 'sig', 'hash')
     event = event_data(contract, tx, 'SolveTask')
     assert event.args._success

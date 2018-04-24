@@ -37,7 +37,7 @@ in the `coin-mixer-poc` project. Here is how to do this.
     The last line in the console should say `8 passing`.  Do not exit the console, open another terminal window
     for the next commands.
 
-4. Edit the `src/config.py' file to match your environment. Use the accounts and
+4. Edit the `src/config.py` file to match your environment. Use the accounts and
     passphrase noted in step #2. 
     
 5. Create a python virtual environment.

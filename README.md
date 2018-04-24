@@ -21,18 +21,17 @@ in the `coin-mixer-poc` project. Here is how to do this.
     
 2. Run the development console.
     ```
-    npm install -g truffle
+    sudo npm install -g truffle
     cd coin-mixer-poc/dapp
     truffle develop
     ```
-    This should create a blockchain on port 9545. Please note the first account
-    address and passphrase.
+    This should create a blockchain on port 9545. Please note the first account address and passphrase.
 
-3. Compile and migrate the smart contracts. Note inside the development console we don't preface commands with `truffle`.
+3. Inside truffle, compile and migrate the smart contracts.
     ```
-    compile
-    migrate
-    test ./test/enigma.js
+    truffle> compile
+    truffle> migrate
+    truffle> test ./test/enigma.js
     ```
     The last line in the console should say `8 passing`.  Do not exit the console, open another terminal window
     for the next commands.

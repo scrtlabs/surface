@@ -6,16 +6,11 @@ Surface is part of the Enigma node software stack. The Surface component is resp
 
 ### Prerequisites
 
-
-```
-TBD
-```
-
-### Installing
-
 This project does things with the Enigma smart contract. To run the tests, the 
 smart contract must be deployed. At the time of writing, the Enigma contract is
 in the `coin-mixer-poc` project. Here is how to do this.
+
+### Installing
 
 1. Clone the `coin-mixer-poc` project in the same parent folder as the
  surface project.

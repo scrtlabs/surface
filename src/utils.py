@@ -90,7 +90,7 @@ def sign_proof(secret_contract, callable, args, bytecode, results, key):
     bcontract = bytearray(secret_contract, 'utf8')
     msg = bcontract + callable + b''.join(args) + bytecode + b''.join(results)
     attribDict = w3.eth.account.sign(
-        message=msg,
+        message=b'dddddd',
         private_key=key
     )
     return attribDict

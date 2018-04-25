@@ -55,24 +55,31 @@ def test_info():
 
 
 @pytest.mark.order4
-def test_compute():
-    args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
+@pytest.fixture(
+    scope="module",
+    params=[
+        [b'uint dealId', b'0', b'address[] destAddresses', b'test']
+    ]
+)
+def task(request):
     preprocessors = [b'shuffle(destAddresses)']
     tx = worker.compute(
-        SECRET_CONTRACT, b'mixAddresses', args, b'distribute', preprocessors, 1
+        SECRET_CONTRACT, b'mixAddresses', request.param, b'distribute',
+        preprocessors, 1
     )
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
+    yield event['args']['taskId']
 
 
 @pytest.mark.order5
-def test_get_task():
-    info = worker.get_task(SECRET_CONTRACT, 0)
+def test_get_task(task):
+    info = worker.get_task(SECRET_CONTRACT, task)
     assert len(info) > 0
 
 
 @pytest.mark.order6
-def test_solve_task():
+def test_solve_task(task):
     key = keys[worker.account]
 
     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
@@ -88,6 +95,6 @@ def test_solve_task():
         results=results,
         key=key,
     )
-    tx = worker.solve_task(SECRET_CONTRACT, 0, args, 'sig', 'hash')
+    tx = worker.solve_task(SECRET_CONTRACT, task, args, proof['signature'], b'hash2')
     event = event_data(contract, tx, 'SolveTask')
     assert event.args._success

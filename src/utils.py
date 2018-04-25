@@ -15,6 +15,7 @@ ENV = 'test'
 
 if ENV == 'test':
     w3 = Web3(HTTPProvider(TEST_URL))
+    w3.eth.enable_unaudited_features()
     enigma_address = None
 else:
     raise NotImplemented('Only develop currently supported')
@@ -73,3 +74,23 @@ def event_data(contract, tx, event_name):
     log_entry = receipt['logs'][0]
     event_abi = contract._find_matching_event_abi(event_name)
     return get_event_data(event_abi, log_entry)
+
+
+def sign_proof(secret_contract, callable, args, bytecode, results, key):
+    """
+    Create a signed hash of all inputs and outputs of a computation task
+
+    :param secret_contract:
+    :param callable:
+    :param args:
+    :param bytecode:
+    :param key:
+    :return:
+    """
+    bcontract = bytearray(secret_contract, 'utf8')
+    msg = bcontract + callable + b''.join(args) + bytecode + b''.join(results)
+    attribDict = w3.eth.account.sign(
+        message=b'Test',
+        private_key=key
+    )
+    return attribDict

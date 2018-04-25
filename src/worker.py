@@ -13,7 +13,7 @@ class Worker:
         log.info('registering account: {}'.format(self.account))
         tx = self.contract.functions.register(
             url, pkey, fee
-        ).transact({'from': self.account})
+        ).transact({'from': self.account, 'value': 1})
 
         return tx
 
@@ -32,7 +32,8 @@ class Worker:
 
         return worker
 
-    def compute(self, secret_contract, callable, args, callback, preprocessors, fee):
+    def compute(self, secret_contract, callable, args, callback, preprocessors,
+                fee):
         log.info(
             'executing computation on contract: {}'.format(secret_contract)
         )
@@ -49,12 +50,12 @@ class Worker:
 
         return worker
 
-    def solve_task(self, secret_contract, task_id, proof):
+    def solve_task(self, secret_contract, task_id, args, sig, hash):
         log.info(
             'solving task: {}'.format(secret_contract, task_id)
         )
         tx = self.contract.functions.solveTask(
-            secret_contract, task_id, proof
+            secret_contract, task_id, args, sig, hash
         ).transact({'from': self.account})
 
         return tx

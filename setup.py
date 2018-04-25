@@ -18,4 +18,5 @@ setup(
     license='',
     author='',
     author_email='',
+    install_requires=['click', 'logbook', 'zmq']
 )

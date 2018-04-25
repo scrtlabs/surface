@@ -95,6 +95,8 @@ def test_solve_task(task):
         results=results,
         key=key,
     )
-    tx = worker.solve_task(SECRET_CONTRACT, task, args, proof['signature'], b'hash2')
+    hash = b'\\x19Ethereum Signed Message:\\n' + b'Test'
+    tx = worker.solve_task(SECRET_CONTRACT, task, args, proof['signature'],
+                           hash)
     event = event_data(contract, tx, 'SolveTask')
     assert event.args._success

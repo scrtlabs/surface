@@ -3,7 +3,7 @@ import os
 from logbook import Logger, StreamHandler
 import sys
 
-from oracle import Oracle
+from listener import Listener
 from utils import enigma_contract
 
 StreamHandler(sys.stdout).push_application()
@@ -34,7 +34,7 @@ def start(mode, datadir):
 
     if mode == 'full':
         contract = enigma_contract(DATADIR)
-        oracle: Oracle = Oracle(datadir, contract)
+        oracle: Listener = Listener(datadir, contract)
         oracle.watch()
 
 

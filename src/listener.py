@@ -12,7 +12,7 @@ TYPES = ['uint', 'address', 'bytes32', 'string']
 log = Logger('listener')
 
 
-class Oracle:
+class Listener:
     def __init__(self, datadir, contract):
         self.datadir = datadir
         self.contract = contract

@@ -62,7 +62,7 @@ def test_info():
     ]
 )
 def task(request):
-    preprocessors = [b'shuffle(destAddresses)']
+    preprocessors = [b'rand()']
     tx = worker.compute(
         SECRET_CONTRACT, b'mixAddresses', request.param, b'distribute',
         preprocessors, 1

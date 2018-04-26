@@ -2,7 +2,7 @@ from time import sleep
 from logbook import Logger
 
 from preprocessor import Preprocessor
-from utils import w3
+from worker import Worker
 
 POLLING_INTERVAL = 5
 FROM_BLOCK = 0
@@ -13,9 +13,10 @@ log = Logger('listener')
 
 
 class Listener:
-    def __init__(self, datadir, contract):
+    def __init__(self, datadir, contract, worker):
         self.datadir = datadir
         self.contract = contract
+        self.worker = worker
 
     def parse_args(self, task):
         """
@@ -60,16 +61,6 @@ class Listener:
 
         return args
 
-    def apply_preprocessors(self, task, args):
-        """
-        Apply the preprocessors before executing the code.
-
-        :return:
-        """
-        preprocessor = Preprocessor(task, args)
-        results = []
-        return results
-
     def handle_task(self, task):
         """
         Handle the ComputeTask event.
@@ -78,15 +69,22 @@ class Listener:
         :return:
         """
         log.info('got new task: {}'.format(task))
+        # TODO: what happens if this worker rejects a task?
+        # TODO: how does the worker know if he is selected to perform the task?
         args = self.parse_args(task)
-        if task['preprocessors']:
-            self.apply_preprocessors(task, args)
 
-        bytecode = w3.eth.getCode(
-            w3.toChecksumAddress(task['callingContract'])
+        bytecode = self.contract.web3.eth.getCode(
+            self.contract.web3.toChecksumAddress(task['callingContract'])
         )
         log.info('the bytecode: {}'.format(bytecode))
-        # TODO: send to core
+        self.worker.compute_task(
+            secret_contract=task['callingContract'],
+            bytecode=bytecode,
+            callable=task['callable'],
+            args=args,
+            callback=task['callback'],
+            preprocessors=task['preprocessors'],
+        )
 
     def watch(self):
         log.info('watching Enigma contract: {}'.format(self.contract.address))

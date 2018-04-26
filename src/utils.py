@@ -9,19 +9,17 @@ from web3.contract import Contract
 # TODO: A develop mode might redeploy the contract on startup
 from web3.utils.events import get_event_data
 
-from config import TEST_URL, CONTRACT_PATH
+from config import PROVIDER_URL, CONTRACT_PATH
 
 ENV = 'test'
 
 if ENV == 'test':
-    w3 = Web3(HTTPProvider(TEST_URL))
-    w3.eth.enable_unaudited_features()
     enigma_address = None
 else:
     raise NotImplemented('Only develop currently supported')
 
 
-def enigma_contract(datadir, address=None) -> Contract:
+def enigma_contract(w3, datadir, address=None) -> Contract:
     """
     Get the Enigma contract object from the app path or dev path.
 
@@ -61,7 +59,7 @@ def enigma_contract(datadir, address=None) -> Contract:
     return contract
 
 
-def event_data(contract, tx, event_name):
+def event_data(contract: Contract, tx, event_name):
     """
     Extract the specified event from a transaction.
 
@@ -70,13 +68,13 @@ def event_data(contract, tx, event_name):
     :param tx:
     :return:
     """
-    receipt = w3.eth.getTransactionReceipt(tx)
+    receipt = contract.web3.eth.getTransactionReceipt(tx)
     log_entry = receipt['logs'][0]
     event_abi = contract._find_matching_event_abi(event_name)
     return get_event_data(event_abi, log_entry)
 
 
-def sign_proof(secret_contract, callable, args, bytecode, results, key):
+def sign_proof(contract,secret_contract, callable, args, bytecode, results, key):
     """
     Create a signed hash of all inputs and outputs of a computation task
 
@@ -89,7 +87,7 @@ def sign_proof(secret_contract, callable, args, bytecode, results, key):
     """
     bcontract = bytearray(secret_contract, 'utf8')
     msg = bcontract + callable + b''.join(args) + bytecode + b''.join(results)
-    attribDict = w3.eth.account.sign(
+    attribDict = contract.web3.eth.account.sign(
         message=b'Test',
         private_key=key
     )

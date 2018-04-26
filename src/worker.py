@@ -4,23 +4,44 @@ log = Logger('Node')
 
 
 class Worker:
-    def __init__(self, datadir, account, contract):
+    def __init__(self, datadir, account, contract, url=None, sig_key=None,
+                 quote=None, fee=0):
         self.datadir = datadir
         self.account = account
         self.contract = contract
+        self._url = url.encode('utf-8')
+        self._sig_key = sig_key
+        self._quote = quote
+        self._fee = fee
 
-    def register(self, url, pkey, fee):
+    @property
+    def quote(self):
+        return self._quote
+
+    @property
+    def sig_key(self):
+        return self._sig_key
+
+    @property
+    def url(self):
+        return self._url
+
+    @property
+    def fee(self):
+        return self._fee
+
+    def register(self):
         log.info('registering account: {}'.format(self.account))
         tx = self.contract.functions.register(
-            url, pkey, fee
+            self.url, self.sig_key, self.fee
         ).transact({'from': self.account, 'value': 1})
 
         return tx
 
-    def login(self, quote):
+    def login(self):
         log.info('login account: {}'.format(self.account))
         tx = self.contract.functions.login(
-            quote
+            self.quote
         ).transact({'from': self.account})
 
         return tx
@@ -32,8 +53,9 @@ class Worker:
 
         return worker
 
-    def compute(self, secret_contract, callable, args, callback, preprocessors,
-                fee):
+    def trigger_compute_task(self, secret_contract, callable, args, callback,
+                             preprocessors,
+                             fee):
         log.info(
             'executing computation on contract: {}'.format(secret_contract)
         )
@@ -50,12 +72,22 @@ class Worker:
 
         return worker
 
-    def solve_task(self, secret_contract, task_id, args, sig, hash):
+    def solve_task(self, secret_contract, task_id, args, sig):
         log.info(
             'solving task: {}'.format(secret_contract, task_id)
         )
         tx = self.contract.functions.solveTask(
-            secret_contract, task_id, args, sig, hash
+            secret_contract, task_id, args, sig
         ).transact({'from': self.account})
 
         return tx
+
+    def compute_task(self, secret_contract, bytecode, callable, args, callback,
+                     preprocessors):
+        log.info(
+            'sending task to Core for private computation'
+        )
+        # TODO: invoke core
+        results = None
+        sig = None
+        return results, sig

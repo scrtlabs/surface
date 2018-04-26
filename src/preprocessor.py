@@ -1,4 +1,4 @@
-from random import random
+from random import randint
 
 
 class Preprocessor:
@@ -6,9 +6,9 @@ class Preprocessor:
         self.task = task
         self.args = args
 
-    def shuffle(self, inputs):
+    def rand(self):
         """
-        Shuffle the values of a list.
+        Return a random integer.
         :return:
         """
-        return random.shuffle(inputs)
+        return randint(0, 127)

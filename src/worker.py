@@ -72,12 +72,12 @@ class Worker:
 
         return worker
 
-    def solve_task(self, secret_contract, task_id, args, sig):
+    def solve_task(self, secret_contract, task_id, results, sig):
         log.info(
             'solving task: {}'.format(secret_contract, task_id)
         )
         tx = self.contract.functions.solveTask(
-            secret_contract, task_id, args, sig
+            secret_contract, task_id, results, sig
         ).transact({'from': self.account})
 
         return tx

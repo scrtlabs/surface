@@ -57,6 +57,7 @@ def test_solve_task(task, worker, custodian_key, secret_contract, contract):
         contract.web3.toChecksumAddress(secret_contract)
     )
     results = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
+    # TODO: this should be done in core, for testing purposes only
     proof = sign_proof(
         contract=contract,
         secret_contract=secret_contract,
@@ -67,7 +68,7 @@ def test_solve_task(task, worker, custodian_key, secret_contract, contract):
         key=custodian_key,
     )
     tx = worker.solve_task(
-        secret_contract, task, args, proof['signature']
+        secret_contract, task, results, proof['signature']
     )
     event = event_data(contract, tx, 'SolveTask')
     assert event.args._success

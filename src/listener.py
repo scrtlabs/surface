@@ -1,8 +1,6 @@
 from time import sleep
-from logbook import Logger
 
-from preprocessor import Preprocessor
-from worker import Worker
+from logbook import Logger
 
 POLLING_INTERVAL = 5
 FROM_BLOCK = 0

@@ -39,7 +39,7 @@ DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
     show_default=True,
     help='The web3 provider url.',
 )
-def start(mode, datadir, url):
+def start(mode, datadir, provider):
     log.info('Starting up {} node.'.format(mode))
     if not os.path.exists(datadir):
         os.makedirs(datadir)
@@ -51,7 +51,7 @@ def start(mode, datadir, url):
     with open(account_file) as data_file:
         account_data = json.load(data_file)
 
-    w3 = Web3(HTTPProvider(url))
+    w3 = Web3(HTTPProvider(provider))
     w3.eth.enable_unaudited_features()
 
     account = w3.toChecksumAddress(account_data['address'])

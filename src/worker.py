@@ -9,7 +9,7 @@ class Worker:
         self.datadir = datadir
         self.account = account
         self.contract = contract
-        self._url = url.encode('utf-8')
+        self._url = url
         self._sig_key = sig_key
         self._quote = quote
         self._fee = fee

@@ -1,22 +1,11 @@
 import json
+import os
 import shutil
 
-import os
-from web3 import Web3, HTTPProvider
 from web3.contract import Contract
-
-# This mode tests a deployed contract
-# TODO: A develop mode might redeploy the contract on startup
 from web3.utils.events import get_event_data
 
-from config import PROVIDER_URL, CONTRACT_PATH
-
-ENV = 'test'
-
-if ENV == 'test':
-    enigma_address = None
-else:
-    raise NotImplemented('Only develop currently supported')
+from config import CONTRACT_PATH
 
 
 def enigma_contract(w3, datadir, address=None) -> Contract:
@@ -74,7 +63,8 @@ def event_data(contract: Contract, tx, event_name):
     return get_event_data(event_abi, log_entry)
 
 
-def sign_proof(contract,secret_contract, callable, args, bytecode, results, key):
+def sign_proof(contract, secret_contract, callable, args, bytecode, results,
+               key):
     """
     Create a signed hash of all inputs and outputs of a computation task
 

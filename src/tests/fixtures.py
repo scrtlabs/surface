@@ -62,7 +62,7 @@ def worker(contract, account, request):
             datadir=DATADIR,
             account=account,
             contract=contract,
-            url=worker_data['url'],
+            url=worker_data['url'].encode('utf-8'),
             sig_key=worker_data['sig_key'],
             quote=worker_data['quote'],
         )

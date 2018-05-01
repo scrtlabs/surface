@@ -1,3 +1,5 @@
+from binascii import unhexlify
+
 import pytest
 
 from utils import event_data, sign_proof
@@ -70,5 +72,6 @@ def test_solve_task(task, worker, custodian_key, secret_contract, contract):
     tx = worker.solve_task(
         secret_contract, task, results, proof['signature']
     )
+    # event = event_data(contract, tx, 'ValidateSig')
     event = event_data(contract, tx, 'SolveTask')
     assert event.args._success

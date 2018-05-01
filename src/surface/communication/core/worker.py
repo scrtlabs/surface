@@ -101,7 +101,6 @@ class Worker:
         """
         log.info('sending task to Core for private computation')
         # TODO: invoke core
-
         results = None
         sig = None
         return results, sig

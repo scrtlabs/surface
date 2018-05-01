@@ -1,9 +1,10 @@
 import json
 import os
 
+import eth_abi
 from web3.contract import Contract
 from web3.utils.events import get_event_data
-from web3 import Web3,HTTPProvider
+from web3 import Web3, HTTPProvider
 import getpass
 from requests.exceptions import ConnectionError
 
@@ -75,11 +76,18 @@ def sign_proof(contract, secret_contract, callable, args, bytecode, results,
     :return:
     """
     bcontract = bytearray(secret_contract, 'utf8')
-    msg = bcontract + callable + b''.join(args) + bytecode + b''.join(results)
-    # Is it the same as ECDSA? (Sig with prefeix)
+    msg = eth_abi.encode_single('bytes32', callable)
+    msg += eth_abi.encode_single('bytes32', b'pez')
+    # for arg in args:
+    #     msg += eth_abi.encode_single('bytes32', arg)
+    #
+    # for result in results:
+    #     msg += eth_abi.encode_single('bytes32', result)
+    
+    # TODO: Is it the same as ECDSA? (Sig with prefeix)
     attribDict = contract.web3.eth.account.sign(
-        message=msg,
-        private_key=key
+        message=b'TestTest',
+        private_key=key,
     )
     return attribDict
 

@@ -5,14 +5,13 @@ log = Logger('Node')
 
 class Worker:
     def __init__(self, datadir, account, contract, url=None, sig_key=None,
-                 quote=None, fee=0):
+                 quote=None):
         self.datadir = datadir
         self.account = account
         self.contract = contract
         self._url = url
         self._sig_key = sig_key
         self._quote = quote
-        self._fee = fee
 
     @property
     def quote(self):
@@ -26,14 +25,10 @@ class Worker:
     def url(self):
         return self._url
 
-    @property
-    def fee(self):
-        return self._fee
-
     def register(self):
         log.info('registering account: {}'.format(self.account))
         tx = self.contract.functions.register(
-            self.url, self.sig_key, self.fee
+            self.url, self.sig_key
         ).transact({'from': self.account, 'value': 1})
 
         return tx

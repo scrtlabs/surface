@@ -36,16 +36,8 @@ class Worker:
         log.info('registering account: {}'.format(self.account))
         # TODO: the quote should be registered too
         tx = self.contract.functions.register(
-            self.url, self.sig_key
+            self.url, self.sig_key, self.quote
         ).transact({'from': self.account, 'value': 1})
-
-        return tx
-
-    def login(self):
-        log.info('login account: {}'.format(self.account))
-        tx = self.contract.functions.login(
-            self.quote
-        ).transact({'from': self.account})
 
         return tx
 

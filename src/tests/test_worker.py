@@ -2,7 +2,7 @@ from binascii import unhexlify
 
 import pytest
 
-from utils import event_data, sign_proof
+from surface.communication.ethereum.utils import event_data, sign_proof
 from tests.fixtures import w3, account, contract, custodian_key, \
     secret_contract, worker
 
@@ -17,19 +17,12 @@ def test_register(worker, contract):
 
 
 @pytest.mark.order2
-def test_login(worker, contract):
-    tx = worker.login()
-    event = event_data(contract, tx, 'Login')
-    assert event.args._success
-
-
-@pytest.mark.order3
 def test_info(worker):
     info = worker.info()
     assert info
 
 
-@pytest.mark.order4
+@pytest.mark.order3
 @pytest.fixture(
     params=[
         [b'uint dealId', b'0', b'address[] destAddresses', b'test']
@@ -46,13 +39,13 @@ def task(request, secret_contract, worker, contract):
     yield event['args']['taskId']
 
 
-@pytest.mark.order5
+@pytest.mark.order4
 def test_get_task(task, secret_contract, worker):
     info = worker.get_task(secret_contract, task)
     assert len(info) > 0
 
 
-@pytest.mark.order6
+@pytest.mark.order5
 def test_solve_task(task, worker, custodian_key, secret_contract, contract):
     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
     bytecode = contract.web3.eth.getCode(

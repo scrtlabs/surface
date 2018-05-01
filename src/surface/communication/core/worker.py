@@ -1,18 +1,24 @@
 from logbook import Logger
-
+from surface.communication.ias import Quote
 log = Logger('Node')
 
 
 class Worker:
-    def __init__(self, datadir, account, contract, url=None, sig_key=None,
-                 quote=None, fee=0):
-        self.datadir = datadir
+    def __init__(self, account, contract, url=None, sig_key=None,
+                 quote: Quote =None):
+        """
+        The worker is in charge of managing the tasks and talking to core.
+        :param account:
+        :param contract:
+        :param url:
+        :param sig_key:
+        :param quote:
+        """
         self.account = account
         self.contract = contract
         self._url = url
         self._sig_key = sig_key
         self._quote = quote
-        self._fee = fee
 
     @property
     def quote(self):
@@ -26,14 +32,11 @@ class Worker:
     def url(self):
         return self._url
 
-    @property
-    def fee(self):
-        return self._fee
-
     def register(self):
         log.info('registering account: {}'.format(self.account))
+        # TODO: the quote should be registered too
         tx = self.contract.functions.register(
-            self.url, self.sig_key, self.fee
+            self.url, self.sig_key
         ).transact({'from': self.account, 'value': 1})
 
         return tx
@@ -66,6 +69,7 @@ class Worker:
         return tx
 
     def get_task(self, secret_contract, task_id):
+        # TODO: When this should be used? what's the task_id
         log.info('fetching task: {} {}'.format(secret_contract, task_id))
         worker = self.contract.functions.tasks(secret_contract, task_id).call(
             {'from': self.account})
@@ -84,10 +88,20 @@ class Worker:
 
     def compute_task(self, secret_contract, bytecode, callable, args, callback,
                      preprocessors):
-        log.info(
-            'sending task to Core for private computation'
-        )
+        """
+        Pass to core the following:
+        1. the bytecode of the contract
+        2. the function data. e.g "ef9fc50b"
+        3. list of encrypted inputs.
+        4. the IV for the AES encryption.
+
+        Get from core:
+        1. The output of the computation.
+        2. The signature of the output.
+        """
+        log.info('sending task to Core for private computation')
         # TODO: invoke core
+
         results = None
         sig = None
         return results, sig

@@ -2,21 +2,21 @@ from time import sleep
 
 from logbook import Logger
 
-POLLING_INTERVAL = 5
-FROM_BLOCK = 0
-# TODO: not sure if this is necessary
-TYPES = ['uint', 'address', 'bytes32', 'string']
-
 log = Logger('listener')
 
 
 class Listener:
-    def __init__(self, datadir, contract, worker):
+    TYPES = ['uint', 'address', 'bytes32', 'string']
+    POLLING_INTERVAL = 5
+    FROM_BLOCK = 0
+    # TODO: not sure if this is necessary
+
+    def __init__(self, datadir, contract):
         self.datadir = datadir
         self.contract = contract
-        self.worker = worker
 
-    def parse_args(self, task):
+    @classmethod
+    def parse_args(cls, task):
         """
         Parsing arguments into a dictionary.
         Arguments are serialized in a single bytes 32 array.
@@ -31,7 +31,7 @@ class Listener:
             arg_parts = arg.split(' ')
             if len(arg_parts) == 2:
                 data_type = next(
-                    (t for t in TYPES if arg_parts[0].startswith(t)),
+                    (t for t in cls.TYPES if arg_parts[0].startswith(t)),
                     None
                 )
                 if data_type is not None:
@@ -70,36 +70,32 @@ class Listener:
         # TODO: what happens if this worker rejects a task?
         # TODO: how does the worker know if he is selected to perform the task?
         args = self.parse_args(task)
-
-        bytecode = self.contract.web3.eth.getCode(
-            self.contract.web3.toChecksumAddress(task['callingContract'])
-        )
-        log.info('the bytecode: {}'.format(bytecode))
-        self.worker.compute_task(
-            secret_contract=task['callingContract'],
-            bytecode=bytecode,
-            callable=task['callable'],
-            args=args,
-            callback=task['callback'],
-            preprocessors=task['preprocessors'],
-        )
+        return task, args
 
     def watch(self):
+        """
+        Watch the Enigma contract's state.
+        Yields when there's a new task for the worker.
+        :return: The task together with the [callableArgs] parsed into a dict
+        :rtype: (dict, dict)
+        """
         log.info('watching Enigma contract: {}'.format(self.contract.address))
 
         task_filter = self.contract.events.ComputeTask.createFilter(
-            fromBlock=FROM_BLOCK
+            fromBlock=self.FROM_BLOCK
         )
-        tasks = task_filter.get_all_entries()
 
+        tasks = task_filter.get_all_entries()
         log.info('got {} tasks'.format(len(tasks)))
         for task in tasks:
-            self.handle_task(task)
+            args = self.parse_args(task)
+            yield task, args
 
-        # TODO: consider switching to an async listener
         while True:
             log.info('fetching new tasks')
             for task in task_filter.get_new_entries():
-                self.handle_task(task)
+                log.info('got new task: {}'.format(task))
+                args = self.parse_args(task)
+                yield task, args
 
-            sleep(POLLING_INTERVAL)
+            sleep(self.POLLING_INTERVAL)

@@ -6,8 +6,8 @@ from web3 import Web3, HTTPProvider
 from surface.communication.ethereum.utils import enigma_contract
 from surface.communication.core import Worker
 
-
-PACKAGE_PATH = '/home/elichai2/PycharmProjects/surface/src/surface/'
+# TODO: fix, you can infer the package location without using an absolute path
+PACKAGE_PATH = '/Users/fredfortier/Code/enigma/mvp0/surface/src/surface'
 with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
     # TODO: add a user config file in ~/.enigma
     CONFIG = json.load(conf)
@@ -37,7 +37,8 @@ def account(w3, request):
 
 @pytest.fixture
 def contract(w3):
-    return enigma_contract(w3, DATADIR)
+    # TODO: fix, we should have a dynamic way to reference the contract in test mode without having to make copies
+    return enigma_contract(w3, '/Users/fredfortier/Code/enigma/mvp0/coin-mixer-poc/dapp/build/contracts/Enigma.json')
 
 
 @pytest.fixture
@@ -64,7 +65,6 @@ def worker(contract, account, request):
 
     for worker_data in workers_data:
         worker: Worker = Worker(
-            datadir=DATADIR,
             account=account,
             contract=contract,
             url=worker_data['url'].encode('utf-8'),

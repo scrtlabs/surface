@@ -7,13 +7,15 @@ from surface.communication.ethereum.utils import enigma_contract
 from surface.communication.core import Worker
 import surface
 
+PACKAGE_PATH = os.path.dirname(surface.__file__)
+CONFIG_PATH = os.path.join(PACKAGE_PATH, 'config.json')
 
-CONTRACT_PATH = os.path.join(os.path.dirname(surface.__file__), 'config.json')
-with open(CONTRACT_PATH) as conf:
+with open(CONFIG_PATH) as conf:
     # TODO: add a user config file in ~/.enigma
     CONFIG = json.load(conf)
 
 DATADIR = os.path.expanduser(CONFIG['DATADIR'])
+CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
 
 
 @pytest.fixture
@@ -37,7 +39,8 @@ def account(w3, request):
 
 
 @pytest.fixture
-def contract(w3):
+def contract(w3, monkeypatch):
+    monkeypatch.setattr('getpass.getpass', '')
     return enigma_contract(w3, CONTRACT_PATH)
 
 

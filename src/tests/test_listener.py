@@ -9,7 +9,7 @@ DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
 
 
 def test_handle_task(worker, contract):
-    listener: Listener = Listener(DATADIR, contract, worker)
+    listener: Listener = Listener(DATADIR, contract)
     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
     preprocessors = [b'rand()']
     task = dict(

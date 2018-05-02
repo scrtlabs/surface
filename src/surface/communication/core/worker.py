@@ -5,7 +5,7 @@ from surface.communication.core import IPC
 
 
 class Worker:
-    def __init__(self, account, contract, url='', sig_key='',
+    def __init__(self, account, contract, url=''.encode(), sig_key='',
                  quote: Quote =''):
         """
         The worker is in charge of managing the tasks and talking to core.
@@ -41,7 +41,7 @@ class Worker:
         log.info('registering account: {}'.format(self.account))
         # TODO: the quote should be registered too
         tx = self.contract.functions.register(
-            self.url.encode(), self.sig_key, self.quote
+            self.url, self.sig_key, self.quote
         ).transact({'from': self.account, 'value': 1})
 
         return tx

@@ -59,8 +59,7 @@ def start(datadir, provider):
         handle_task(w3, task)
 
 
-def handle_task(worker, contract, task):
-    w3 = contract.web3
+def handle_task(w3, worker, task):
     # 3. Compute the task
     bytecode = w3.eth.getCode(
         w3.toChecksumAddress(task['callingContract']))

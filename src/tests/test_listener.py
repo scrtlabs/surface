@@ -4,7 +4,6 @@ import pytest
 from rlp import encode
 
 from surface.__main__ import handle_task
-from surface.communication.ethereum import Listener
 from tests.fixtures import contract, worker, w3, account, secret_contract
 
 DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
@@ -22,7 +21,7 @@ def args(request):
     yield encode(request.param)
 
 
-def test_handle_task(worker, args, contract, secret_contract):
+def test_handle_task(w3, worker, args, secret_contract):
     preprocessors = [b'rand()']
     task = dict(
         callingContract=secret_contract,
@@ -33,4 +32,4 @@ def test_handle_task(worker, args, contract, secret_contract):
         fee=1,
         preprocessors=preprocessors,
     )
-    handle_task(worker, contract, task)
+    handle_task(w3, worker, task)

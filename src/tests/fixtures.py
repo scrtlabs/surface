@@ -3,16 +3,21 @@ import os
 import pytest
 from web3 import Web3, HTTPProvider
 
-from config import PROVIDER_URL
-from utils import enigma_contract
-from worker import Worker
+from surface.communication.ethereum.utils import enigma_contract
+from surface.communication.core import Worker
 
-DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
+
+PACKAGE_PATH = '/home/elichai2/PycharmProjects/surface/src/surface/'
+with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
+    # TODO: add a user config file in ~/.enigma
+    CONFIG = json.load(conf)
+
+DATADIR = os.path.expanduser(CONFIG['DATADIR'])
 
 
 @pytest.fixture
 def w3():
-    w3 = Web3(HTTPProvider(PROVIDER_URL))
+    w3 = Web3(HTTPProvider(CONFIG['PROVIDER_URL']))
     w3.eth.enable_unaudited_features()
     return w3
 

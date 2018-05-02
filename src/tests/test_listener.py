@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from listener import Listener
+from surface.communication.ethereum import Listener
 from tests.fixtures import contract, worker, w3, account
 
 DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')

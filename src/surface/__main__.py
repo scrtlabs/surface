@@ -5,7 +5,7 @@ import os
 from logbook import Logger, StreamHandler
 import sys
 
-from surface.communication.ethereum import utils
+from surface.communication.ethereum import utils, Listener
 from surface.communication import ethereum
 from surface.communication import core
 
@@ -55,36 +55,46 @@ def start(datadir, provider):
     # TODO: consider spawning threads/async
     listener: ethereum.Listener = ethereum.Listener(datadir, eng_contract)
     for task, args in listener.watch():
+        # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
+        handle_task(w3, task)
 
-        # 3. Compute the task
-        bytecode = w3.eth.getCode(
-            w3.toChecksumAddress(task['callingContract'])),
-        log.info('the bytecode: {}'.format(bytecode))
-        # TODO: what happens if this worker rejects a task?
-        # TODO: how does the worker know if he is selected to perform the task?
-        # results, sig = worker.compute_task(
-        #     secret_contract=task['callingContract'],
-        #     bytecode=bytecode,
-        #     callable=task['callable'],
-        #     args=args,
-        #     callback=task['callback'],
-        #     preprocessors=task['preprocessors'],
-        # )
-        results, sig = worker.compute_task(
-            bytecode,
-            func_data=None,
-            inputs=args,
-            preprocessor=task['preprocessors'],
-            iv=IV
-        )
 
-        # 4. Commit the output back to the contract
-        worker.solve_task(
-            secret_contract=task['callingContract'],
-            task_id=task['taskId'],
-            results=results,
-            sig=sig,
-        )
+def handle_task(worker, contract, task):
+    w3 = contract.web3
+    # 3. Compute the task
+    bytecode = w3.eth.getCode(
+        w3.toChecksumAddress(task['callingContract']))
+    log.info('the bytecode: {}'.format(bytecode))
+
+    # The arguments are now RLP encoded
+    args = Listener.parse_args(task['callableArgs'])
+    log.info('the callable functin arguments: {}'.format(args))
+
+    # TODO: what happens if this worker rejects a task?
+    # TODO: how does the worker know if he is selected to perform the task?
+    # results, sig = worker.compute_task(
+    #     secret_contract=task['callingContract'],
+    #     bytecode=bytecode,
+    #     callable=task['callable'],
+    #     args=args,
+    #     callback=task['callback'],
+    #     preprocessors=task['preprocessors'],
+    # )
+    results, sig = worker.compute_task(
+        bytecode,
+        func_data=None,
+        inputs=args,
+        preprocessor=task['preprocessors'],
+        # iv=IV
+    )
+
+    # 4. Commit the output back to the contract
+    worker.commit_results(
+        secret_contract=task['callingContract'],
+        task_id=task['taskId'],
+        results=results,
+        sig=sig,
+    )
 
 
 if __name__ == '__main__':

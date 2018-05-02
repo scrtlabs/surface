@@ -1,10 +1,8 @@
 from logbook import Logger
-
-from surface.communication.ethereum import Listener
 from surface.communication.ias import Quote
-log = Logger('Node')
-from surface.communication.core import IPC
 from rlp import encode
+
+log = Logger('Node')
 
 
 class Worker:
@@ -42,9 +40,10 @@ class Worker:
         :return:
         """
         log.info('registering account: {}'.format(self.account))
-        # TODO: the quote should be registered too
+        # TODO: why was there an encode() call here?
+        # self.url.encode(), self.sig_key, self.quote
         tx = self.contract.functions.register(
-            self.url.encode(), self.sig_key, self.quote
+            self.url, self.sig_key, self.quote
         ).transact({'from': self.account, 'value': 1})
 
         return tx
@@ -81,7 +80,7 @@ class Worker:
 
         return worker
 
-    def solve_task(self, secret_contract, task_id, results, sig):
+    def commit_results(self, secret_contract, task_id, results, sig):
         """
         Commiting the task
         :param secret_contract:
@@ -93,7 +92,7 @@ class Worker:
         log.info(
             'solving task: {}'.format(secret_contract, task_id)
         )
-        tx = self.contract.functions.solveTask(
+        tx = self.contract.functions.commitResults(
             secret_contract, task_id, results, sig
         ).transact({'from': self.account})
 
@@ -101,7 +100,7 @@ class Worker:
 
     # def compute_task(self, secret_contract, bytecode, callable, args, callback,
     #                  preprocessors):
-    def compute_task(self, bytecode, func_data, inputs, preprocessor, iv):
+    def compute_task(self, bytecode, func_data, inputs, preprocessor, iv=None):
         """
         Pass to core the following:
         1. the bytecode of the contract

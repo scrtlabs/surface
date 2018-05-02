@@ -20,47 +20,12 @@ class Listener:
     @classmethod
     def parse_args(cls, callable_args):
         """
-        Parsing arguments into a dictionary.
-        Arguments are serialized in a single bytes 32 array.
-        We break it down and cast types.
+        Parsing arguments using RLP.
 
         :return:
         """
-        arg_list = decode(callable_args)
-        last_arg = None
-        args = dict()
-        for arg in arg_list:
-            arg = arg.decode('utf-8')
-            arg_parts = arg.split(' ')
-            if len(arg_parts) == 2:
-                data_type = next(
-                    (t for t in cls.TYPES if arg_parts[0].startswith(t)),
-                    None
-                )
-                if data_type is not None:
-                    last_arg = arg_parts[1]
-
-                    if arg_parts[0].endswith('[]'):
-                        args[last_arg] = list()
-
-                    else:
-                        args[last_arg] = None
-
-                elif last_arg is not None:
-                    if args[last_arg] is None:
-                        args[last_arg] = arg
-
-                    else:
-                        args[last_arg].append(arg)
-
-            elif last_arg is not None:
-                if args[last_arg] is None:
-                    args[last_arg] = arg
-
-                else:
-                    args[last_arg].append(arg)
-
-        return args
+        # TODO: not sure if we need to cast types here
+        return decode(callable_args)
 
     def handle_task(self, task):
         """

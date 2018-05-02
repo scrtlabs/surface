@@ -1,19 +1,31 @@
 import os
 
 import pytest
+from rlp import encode
 
+from surface.__main__ import handle_task
 from surface.communication.ethereum import Listener
-from tests.fixtures import contract, worker, w3, account
+from tests.fixtures import contract, worker, w3, account, secret_contract
 
 DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
 
 
-def test_handle_task(worker, contract):
-    listener: Listener = Listener(DATADIR, contract)
-    args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
+@pytest.fixture(
+    params=[
+        [b'0', [
+            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972',
+            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972'
+        ]]
+    ]
+)
+def args(request):
+    yield encode(request.param)
+
+
+def test_handle_task(worker, args, contract, secret_contract):
     preprocessors = [b'rand()']
     task = dict(
-        callingContract='0x345ca3e014aaf5dca488057592ee47305d9b3e10',
+        callingContract=secret_contract,
         taskId=0,
         callable=b'mixAddresses',
         callableArgs=args,
@@ -21,4 +33,4 @@ def test_handle_task(worker, contract):
         fee=1,
         preprocessors=preprocessors,
     )
-    listener.handle_task(task)
+    handle_task(worker, contract, task)

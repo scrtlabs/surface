@@ -1,6 +1,7 @@
 from binascii import unhexlify
 
 import pytest
+from rlp import decode
 
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data, sign_proof
@@ -26,7 +27,10 @@ def test_info(worker):
 @pytest.mark.order3
 @pytest.fixture(
     params=[
-        [b'uint dealId', b'0', b'address[] destAddresses', b'test']
+        [b'0', [
+            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972',
+            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972'
+        ]]
     ]
 )
 def task(request, secret_contract, worker, contract):
@@ -38,9 +42,9 @@ def task(request, secret_contract, worker, contract):
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
 
-    # Parsing RLP encoded arguments
+    # Making sure that we can parse the RLP arguments
     args = Listener.parse_args(event['args']['callableArgs'])
-    assert len(args['destAddresses']) > 0
+    assert len(args[1]) > 0
 
     yield event['args']['taskId']
 
@@ -68,7 +72,7 @@ def test_solve_task(task, worker, custodian_key, secret_contract, contract):
         results=results,
         key=custodian_key,
     )
-    tx = worker.solve_task(
+    tx = worker.commit_results(
         secret_contract, task, results, proof['signature']
     )
     # event = event_data(contract, tx, 'ValidateSig')

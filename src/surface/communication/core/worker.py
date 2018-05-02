@@ -50,12 +50,17 @@ class Worker:
         return tx
 
     def info(self):
+        """
+        returns the worker struct of that account
+        :return:
+        """
         log.info('fetching worker info: {}'.format(self.account))
         worker = self.contract.functions.workers(self.account).call(
             {'from': self.account})
 
         return worker
 
+    # TODO: move into the dapp.
     def trigger_compute_task(self, secret_contract, callable, args, callback,
                              preprocessors,
                              fee):
@@ -77,6 +82,14 @@ class Worker:
         return worker
 
     def solve_task(self, secret_contract, task_id, results, sig):
+        """
+        Commiting the task
+        :param secret_contract:
+        :param task_id:
+        :param results:
+        :param sig:
+        :return:
+        """
         log.info(
             'solving task: {}'.format(secret_contract, task_id)
         )

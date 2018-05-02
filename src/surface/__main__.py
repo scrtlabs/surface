@@ -72,7 +72,7 @@ def start(mode, datadir, provider):
         # 4. Commit the output back to the contract
         worker.solve_task(
             secret_contract=task['callingContract'],
-            task_id=task['taskId'],  # TODO: check with Fred
+            task_id=task['taskId'],
             results=results,
             sig=sig,
         )

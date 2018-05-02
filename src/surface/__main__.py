@@ -11,8 +11,8 @@ from surface.communication import core
 
 StreamHandler(sys.stdout).push_application()
 log = Logger('main')
-
-with open('config.json') as conf:
+PACKAGE_PATH = os.path.dirname(__file__)
+with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
     # TODO: add a user config file in ~/.enigma
     CONFIG = json.load(conf)
 
@@ -32,18 +32,20 @@ DATADIR = os.path.expanduser(CONFIG['DATADIR'])
     show_default=True,
     help='The web3 provider url.',
 )
-def start(mode, datadir, provider):
-    log.info('Starting up {} node.'.format(mode))
+def start(datadir, provider):
+    log.info('Starting up {} node.')
 
     # 1.1 Talk to Core, get quote
-    core_socket = core.IPC()
-    report = core_socket.get_report()
-    quote = generate_quote(report)  # TODO: Generate quote via swig
+    # core_socket = core.IPC()
+    # report = core_socket.get_report()
+    # quote = generate_quote(report)  # TODO: Generate quote via swig
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account, w3 = utils.unlock_wallet(provider)
-    eng_contract = utils.enigma_contract(w3, CONFIG['CONTRACT_PATH'])
-    worker = core.Worker(datadir, account, eng_contract, quote)
+    eng_contract = utils.enigma_contract(
+        w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
+    )
+    worker = core.Worker(account, eng_contract)
     worker.register()
 
     # 2.1 Listen for outside connection for exchanging keys.
@@ -60,13 +62,20 @@ def start(mode, datadir, provider):
         log.info('the bytecode: {}'.format(bytecode))
         # TODO: what happens if this worker rejects a task?
         # TODO: how does the worker know if he is selected to perform the task?
+        # results, sig = worker.compute_task(
+        #     secret_contract=task['callingContract'],
+        #     bytecode=bytecode,
+        #     callable=task['callable'],
+        #     args=args,
+        #     callback=task['callback'],
+        #     preprocessors=task['preprocessors'],
+        # )
         results, sig = worker.compute_task(
-            secret_contract=task['callingContract'],
-            bytecode=bytecode,
-            callable=task['callable'],
-            args=args,
-            callback=task['callback'],
-            preprocessors=task['preprocessors'],
+            bytecode,
+            func_data=None,
+            inputs=args,
+            preprocessor=task['preprocessors'],
+            iv=IV
         )
 
         # 4. Commit the output back to the contract

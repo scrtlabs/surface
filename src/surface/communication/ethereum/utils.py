@@ -25,7 +25,7 @@ def enigma_contract(w3, contract_location, address=None) -> Contract:
 
     # TODO: Maybe the contract needs it's own repo?
     if not os.path.isfile(contract_location):
-        raise FileNotFoundError
+        raise FileNotFoundError(contract_location)
 
     with open(contract_location) as handle:
         contract_json: str = json.load(handle)
@@ -103,7 +103,7 @@ def unlock_wallet(provider):
     while not unlock:
         try:
             passhrase = getpass.getpass(
-                'Enter your the passphrase for account: ' + account + ' ')
+                'Enter your the passphrase for account: ' + account + '\n')
             unlock = w3.personal.unlockAccount(account, passhrase)
         except ValueError:
             raise ValueError(

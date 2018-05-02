@@ -1,4 +1,5 @@
 import zmq
+import json
 
 
 class IPC:
@@ -7,8 +8,8 @@ class IPC:
     GET_PUB_KEY = 'getpubkey'.encode()
     EXEC_EVM = 'execevm'.encode()
 
-    def __init__(self, port=None):
-        self.port = port or 1337
+    def __init__(self, port=1337):
+        self.port = port
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
 
@@ -25,7 +26,12 @@ class IPC:
         pubkey = self.socket.recv_string()
         return pubkey
 
-    def exec_evm(self, bytecode, inputs):
-        self.socket.send_multipart([IPC.GET_PUB_KEY, bytecode, inputs])
+    def exec_evm(self, bytecode, function, inputs, preprocessors, iv):
+        args = {'bytecode': bytecode,
+                'function': function,
+                'inputs': inputs,
+                'preprocessors': preprocessors,
+                'iv': iv}
+        self.socket.send_multipart([IPC.EXEC_EVM, json.dumps(args).encode()])
         output = self.socket.recv_string()
         return output

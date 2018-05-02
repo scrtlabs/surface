@@ -1,5 +1,5 @@
 {
   "PROVIDER_URL": "http://localhost:9545",
-  "CONTRACT_PATH": "contracts/Enigma.sol",
+  "CONTRACT_PATH": "contracts/Enigma.json",
   "DATADIR": "~/.enigma"
 }

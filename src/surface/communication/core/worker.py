@@ -1,11 +1,12 @@
 from logbook import Logger
 from surface.communication.ias import Quote
 log = Logger('Node')
+from surface.communication.core import IPC
 
 
 class Worker:
-    def __init__(self, account, contract, url=None, sig_key=None,
-                 quote: Quote =None):
+    def __init__(self, account, contract, url='', sig_key='',
+                 quote: Quote =''):
         """
         The worker is in charge of managing the tasks and talking to core.
         :param account:
@@ -33,18 +34,21 @@ class Worker:
         return self._url
 
     def register(self):
+        """
+        Registers the worker with the Enigma contract
+        :return:
+        """
         log.info('registering account: {}'.format(self.account))
         # TODO: the quote should be registered too
         tx = self.contract.functions.register(
-            self.url, self.sig_key, self.quote
+            self.url.encode(), self.sig_key, self.quote
         ).transact({'from': self.account, 'value': 1})
 
         return tx
 
     def info(self):
         """
-        returns the worker struct of that account
-        :return:
+        :return: The worker struct of that account
         """
         log.info('fetching worker info: {}'.format(self.account))
         worker = self.contract.functions.workers(self.account).call(
@@ -91,14 +95,16 @@ class Worker:
 
         return tx
 
-    def compute_task(self, secret_contract, bytecode, callable, args, callback,
-                     preprocessors):
+    # def compute_task(self, secret_contract, bytecode, callable, args, callback,
+    #                  preprocessors):
+    def compute_task(self, bytecode, func_data, inputs, preprocessor, iv):
         """
         Pass to core the following:
         1. the bytecode of the contract
         2. the function data. e.g "ef9fc50b"
         3. list of encrypted inputs.
-        4. the IV for the AES encryption.
+        4. the preprocessors
+        5. the IV for the AES encryption.
 
         Get from core:
         1. The output of the computation.

@@ -1,12 +1,16 @@
 from logbook import Logger
+
+from surface.communication.ethereum import Listener
 from surface.communication.ias import Quote
+
 log = Logger('Node')
 from surface.communication.core import IPC
+from rlp import encode, decode
 
 
 class Worker:
     def __init__(self, account, contract, url='', sig_key='',
-                 quote: Quote =''):
+                 quote: Quote = ''):
         """
         The worker is in charge of managing the tasks and talking to core.
         :param account:
@@ -41,7 +45,7 @@ class Worker:
         log.info('registering account: {}'.format(self.account))
         # TODO: the quote should be registered too
         tx = self.contract.functions.register(
-            self.url.encode(), self.sig_key, self.quote
+            self.url, self.sig_key, self.quote
         ).transact({'from': self.account, 'value': 1})
 
         return tx
@@ -63,8 +67,9 @@ class Worker:
         log.info(
             'executing computation on contract: {}'.format(secret_contract)
         )
+        msg = encode(args)
         tx = self.contract.functions.compute(
-            secret_contract, callable, args, callback, preprocessors
+            secret_contract, callable, msg, callback, preprocessors
         ).transact({'from': self.account, 'value': fee})
 
         return tx

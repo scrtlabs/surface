@@ -2,6 +2,7 @@ from binascii import unhexlify
 
 import pytest
 
+from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data, sign_proof
 from tests.fixtures import w3, account, contract, custodian_key, \
     secret_contract, worker
@@ -36,6 +37,11 @@ def task(request, secret_contract, worker, contract):
     )
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
+
+    # Parsing RLP encoded arguments
+    args = Listener.parse_args(event['args']['callableArgs'])
+    assert len(args['destAddresses']) > 0
+
     yield event['args']['taskId']
 
 

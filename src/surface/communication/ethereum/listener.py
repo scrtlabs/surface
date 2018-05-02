@@ -1,6 +1,7 @@
 from time import sleep
 
 from logbook import Logger
+from rlp import decode
 
 log = Logger('listener')
 
@@ -9,6 +10,7 @@ class Listener:
     TYPES = ['uint', 'address', 'bytes32', 'string']
     POLLING_INTERVAL = 5
     FROM_BLOCK = 0
+
     # TODO: not sure if this is necessary
 
     def __init__(self, datadir, contract):
@@ -16,7 +18,7 @@ class Listener:
         self.contract = contract
 
     @classmethod
-    def parse_args(cls, task):
+    def parse_args(cls, callable_args):
         """
         Parsing arguments into a dictionary.
         Arguments are serialized in a single bytes 32 array.
@@ -24,9 +26,10 @@ class Listener:
 
         :return:
         """
+        arg_list = decode(callable_args)
         last_arg = None
         args = dict()
-        for arg in task['callableArgs']:
+        for arg in arg_list:
             arg = arg.decode('utf-8')
             arg_parts = arg.split(' ')
             if len(arg_parts) == 2:
@@ -69,7 +72,7 @@ class Listener:
         log.info('got new task: {}'.format(task))
         # TODO: what happens if this worker rejects a task?
         # TODO: how does the worker know if he is selected to perform the task?
-        args = self.parse_args(task)
+        args = self.parse_args(task['callableArgs'])
         return task, args
 
     def watch(self):
@@ -88,14 +91,14 @@ class Listener:
         tasks = task_filter.get_all_entries()
         log.info('got {} tasks'.format(len(tasks)))
         for task in tasks:
-            args = self.parse_args(task)
+            args = self.parse_args(task['callableArgs'])
             yield task, args
 
         while True:
             log.info('fetching new tasks')
             for task in task_filter.get_new_entries():
                 log.info('got new task: {}'.format(task))
-                args = self.parse_args(task)
+                args = self.parse_args(task['callableArgs'])
                 yield task, args
 
             sleep(self.POLLING_INTERVAL)

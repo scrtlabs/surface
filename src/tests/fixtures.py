@@ -41,7 +41,7 @@ def account(w3, request):
 
 @pytest.fixture
 def contract(w3, monkeypatch):
-    monkeypatch.setattr('getpass.getpass', '')
+    # monkeypatch.setattr('getpass.getpass', lambda x: '')
     return enigma_contract(w3, CONTRACT_PATH)
 
 

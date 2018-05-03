@@ -36,8 +36,8 @@ def test_info(worker):
 def task(request, secret_contract, worker, contract):
     preprocessors = [b'rand()']
     tx = worker.trigger_compute_task(
-        secret_contract, b'mixAddresses', request.param, b'distribute',
-        preprocessors, 1
+        secret_contract, 'mixAddresses(uint,address[],uint)', request.param,
+        'distribute(uint,address[])', preprocessors, 1
     )
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success

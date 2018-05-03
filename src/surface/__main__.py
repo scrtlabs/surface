@@ -8,10 +8,11 @@ import sys
 from surface.communication.ethereum import utils, Listener
 from surface.communication import ethereum
 from surface.communication import core
+import surface
 
 StreamHandler(sys.stdout).push_application()
 log = Logger('main')
-PACKAGE_PATH = os.path.dirname(__file__)
+PACKAGE_PATH = os.path.dirname(surface.__file__)
 with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
     # TODO: add a user config file in ~/.enigma
     CONFIG = json.load(conf)
@@ -42,6 +43,7 @@ def start(datadir, provider):
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account, w3 = utils.unlock_wallet(provider)
+    # TODO: Need to talk on where the contract should be.
     eng_contract = utils.enigma_contract(
         w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
     )
@@ -56,7 +58,7 @@ def start(datadir, provider):
     listener: ethereum.Listener = ethereum.Listener(datadir, eng_contract)
     for task, args in listener.watch():
         # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
-        handle_task(w3, task)
+        handle_task(w3, worker, task)
 
 
 def handle_task(w3, worker, task):

@@ -33,3 +33,4 @@ def test_handle_task(w3, worker, args, secret_contract):
         preprocessors=preprocessors,
     )
     handle_task(w3, worker, task)
+

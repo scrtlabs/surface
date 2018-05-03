@@ -15,9 +15,8 @@ with open(CONFIG_PATH) as conf:
     CONFIG = json.load(conf)
 
 DATADIR = os.path.expanduser(CONFIG['DATADIR'])
-# CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
+CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
 # TODO: consider reading an environment variable so we can override the default if needed
-CONTRACT_PATH = '/Users/fredfortier/Code/enigma/mvp0/coin-mixer-poc/dapp/build/contracts/Enigma.json'
 
 
 @pytest.fixture
@@ -42,7 +41,7 @@ def account(w3, request):
 
 @pytest.fixture
 def contract(w3, monkeypatch):
-    monkeypatch.setattr('getpass.getpass', '')
+    # monkeypatch.setattr('getpass.getpass', lambda x: '')
     return enigma_contract(w3, CONTRACT_PATH)
 
 

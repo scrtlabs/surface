@@ -1,5 +1,5 @@
 {
   "PROVIDER_URL": "http://localhost:9545",
-  "CONTRACT_PATH": "contracts/Enigma.json",
+  "CONTRACT_PATH": "../../../coin-mixer-poc/dapp/build/contracts/Enigma.json",
   "DATADIR": "~/.enigma"
 }

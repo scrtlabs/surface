@@ -57,6 +57,7 @@ def test_get_task(task, secret_contract, worker):
 
 @pytest.mark.order5
 def test_solve_task(task, worker, custodian_key, secret_contract, contract):
+    # TODO: outdated, see JS using test: coin-mixer-poc/dapp/test/enigma.js:141
     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
     bytecode = contract.web3.eth.getCode(
         contract.web3.toChecksumAddress(secret_contract)

@@ -35,9 +35,10 @@ def test_info(worker):
 )
 def task(request, secret_contract, worker, contract):
     preprocessors = [b'rand()']
+    # TODO: BROKEN, adjust based on JS test: coin-mixer-poc/dapp/test/enigma.js:47
     tx = worker.trigger_compute_task(
-        secret_contract, b'mixAddresses', request.param, b'distribute',
-        preprocessors, 1
+        secret_contract, 'mixAddresses(uint,address[],uint)', request.param,
+        'distribute(uint,address[])', preprocessors, 1
     )
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
@@ -57,6 +58,7 @@ def test_get_task(task, secret_contract, worker):
 
 @pytest.mark.order5
 def test_solve_task(task, worker, custodian_key, secret_contract, contract):
+    # TODO: BROKEN, adjust based on JS tests: coin-mixer-poc/dapp/test/enigma.js:162
     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
     bytecode = contract.web3.eth.getCode(
         contract.web3.toChecksumAddress(secret_contract)

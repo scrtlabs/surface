@@ -1,5 +1,8 @@
 import zmq
 import json
+from logbook import Logger
+
+log = Logger('Node')
 
 
 class IPC:
@@ -14,19 +17,34 @@ class IPC:
         self.socket = context.socket(zmq.REQ)
 
     def connect(self):
-        self.socket.connect('tcp://' + IPC.IP + ':' + self.port)
+        self.socket.connect('tcp://' + IPC.IP + ':' + str(self.port))
 
     def get_report(self, *args):
+        log.info('Asking Core for SGX Report')
         self.socket.send_multipart([IPC.GET_REPORT, args])
         report = self.socket.recv_string()
         return report
 
     def get_key(self, *args):
+        log.info('Asking Core for keys')
         self.socket.send_multipart([IPC.GET_PUB_KEY, args])
         pubkey = self.socket.recv_string()
         return pubkey
 
     def exec_evm(self, bytecode, function, inputs, preprocessors, iv):
+        """
+        Pass to core the following:
+        1. the bytecode of the contract
+        2. the function data. e.g "ef9fc50b"
+        3. list of encrypted inputs.
+        4. the preprocessors
+        5. the IV for the AES encryption.
+
+        Get from core:
+        1. The output of the computation.
+        2. The signature of the output.
+        """
+        log.info('sending task to Core for private computation')
         args = {'bytecode': bytecode,
                 'function': function,
                 'inputs': inputs,

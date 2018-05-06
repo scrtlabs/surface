@@ -103,24 +103,3 @@ class Worker:
         ).transact({'from': self.account})
 
         return tx
-
-    # def compute_task(self, secret_contract, bytecode, callable, args, callback,
-    #                  preprocessors):
-    def compute_task(self, bytecode, func_data, inputs, preprocessor, iv=None):
-        """
-        Pass to core the following:
-        1. the bytecode of the contract
-        2. the function data. e.g "ef9fc50b"
-        3. list of encrypted inputs.
-        4. the preprocessors
-        5. the IV for the AES encryption.
-
-        Get from core:
-        1. The output of the computation.
-        2. The signature of the output.
-        """
-        log.info('sending task to Core for private computation')
-        # TODO: invoke core
-        outputs, sig = self.ipc.exec_evm(
-            bytecode, func_data, inputs, preprocessor, iv)
-        return outputs, sig

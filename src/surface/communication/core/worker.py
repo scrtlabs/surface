@@ -42,9 +42,12 @@ class Worker:
         log.info('registering account: {}'.format(self.account))
         # TODO: why was there an encode() call here?
         # self.url.encode(), self.sig_key, self.quote
+        print(self.account)
+        print(len(self.quote)+len(self.sig_key)+len(self.url))
         tx = self.contract.functions.register(
             self.url, self.sig_key, self.quote
-        ).transact({'from': self.account, 'value': 1})
+            # TODO: Research how much gas limit to put.
+        ).transact({'from': self.account, 'value': 1, 'gas': 1188498})
 
         return tx
 

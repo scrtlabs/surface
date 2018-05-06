@@ -66,9 +66,10 @@ class Worker:
             'executing computation on contract: {}'.format(secret_contract)
         )
         msg = encode(args)
+        # TODO: must call approve() first, see JS test
         tx = self.contract.functions.compute(
-            secret_contract, callable, msg, callback, preprocessors
-        ).transact({'from': self.account, 'value': fee})
+            secret_contract, callable, msg, callback, fee, preprocessors
+        ).transact({'from': self.account})
 
         return tx
 

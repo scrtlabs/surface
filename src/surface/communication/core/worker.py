@@ -1,6 +1,7 @@
 from logbook import Logger
 from surface.communication.ias import Quote
 from rlp import encode
+from surface.communication.core import IPC
 
 log = Logger('Node')
 
@@ -21,6 +22,7 @@ class Worker:
         self._url = url
         self._sig_key = sig_key
         self._quote = quote
+        self.ipc = IPC()
 
     @property
     def quote(self):
@@ -119,6 +121,6 @@ class Worker:
         """
         log.info('sending task to Core for private computation')
         # TODO: invoke core
-        results = b''
-        sig = b''
-        return results, sig
+        outputs, sig = self.ipc.exec_evm(
+            bytecode, func_data, inputs, preprocessor, iv)
+        return outputs, sig

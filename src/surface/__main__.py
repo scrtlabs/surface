@@ -73,17 +73,11 @@ def handle_task(w3, worker, task):
 
     # TODO: what happens if this worker rejects a task?
     # TODO: how does the worker know if he is selected to perform the task?
-    # results, sig = worker.compute_task(
-    #     secret_contract=task['callingContract'],
-    #     bytecode=bytecode,
-    #     callable=task['callable'],
-    #     args=args,
-    #     callback=task['callback'],
-    #     preprocessors=task['preprocessors'],
-    # )
     results, sig = worker.compute_task(
         bytecode,
-        func_data=None,
+        # TODO: Check if arguments are right.
+        # TODO: Discuss where the IV comes from
+        func_data=task['callable'],
         inputs=args,
         preprocessor=task['preprocessors'],
         # iv=IV

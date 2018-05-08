@@ -1,12 +1,15 @@
+import sha3
+from ecdsa import SigningKey, SECP256k1
 from logbook import Logger
+
 from surface.communication.ias import Quote
 from rlp import encode
 
-log = Logger('Node')
+log = Logger('Worker')
 
 
 class Worker:
-    def __init__(self, account, contract, url=''.encode(), sig_key='',
+    def __init__(self, account, contract, url=''.encode(), signing_priv_key='',
                  quote: Quote = ''):
         """
         The worker is in charge of managing the tasks and talking to core.
@@ -19,7 +22,12 @@ class Worker:
         self.account = account
         self.contract = contract
         self._url = url
-        self._sig_key = sig_key
+
+        if signing_priv_key != '':
+            self._signing_priv_key = signing_priv_key
+        else:
+            self._signing_priv_key = Worker.generate_priv_key()
+
         self._quote = quote
 
     @property
@@ -27,8 +35,41 @@ class Worker:
         return self._quote
 
     @property
-    def sig_key(self):
-        return self._sig_key
+    def signing_priv_key(self):
+        return self._signing_priv_key
+
+    @classmethod
+    def generate_priv_key(cls):
+        """
+        Generate a new hex serialized priv key
+        
+        :return: 
+        """
+        priv = SigningKey.generate(curve=SECP256k1)
+        return priv.to_string().hex()
+
+    @property
+    def signer(self):
+        """
+        Return the signer address calculated from the priv key.
+        The address is generated just like an Ethereum wallet address to
+        maintain compatibility with Solidity's ECRecovery.
+
+        See ref implementation: https://github.com/vkobel/ethereum-generate-wallet
+
+        :return: 
+        """
+        keccak = sha3.keccak_256()
+
+        priv_bytes = bytearray.fromhex(self._signing_priv_key)
+        priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
+        pub = priv.get_verifying_key().to_string()
+
+        keccak.update(pub)
+        address = self.contract.web3.toChecksumAddress(
+            '0x{}'.format(keccak.hexdigest()[24:])
+        )
+        return address
 
     @property
     def url(self):
@@ -40,10 +81,8 @@ class Worker:
         :return:
         """
         log.info('registering account: {}'.format(self.account))
-        # TODO: why was there an encode() call here?
-        # self.url.encode(), self.sig_key, self.quote
         tx = self.contract.functions.register(
-            self.url, self.sig_key, self.quote
+            self.url, self.signer, self.quote
         ).transact({'from': self.account, 'value': 1})
 
         return tx
@@ -58,7 +97,6 @@ class Worker:
 
         return worker
 
-    # TODO: move into the dapp.
     def trigger_compute_task(self, secret_contract, callable, args, callback,
                              preprocessors,
                              fee):

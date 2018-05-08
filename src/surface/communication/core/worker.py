@@ -4,6 +4,7 @@ from logbook import Logger
 
 from surface.communication.ias import Quote
 from rlp import encode
+from surface.communication.core import IPC
 
 log = Logger('Worker')
 
@@ -29,6 +30,7 @@ class Worker:
             self._signing_priv_key = Worker.generate_priv_key()
 
         self._quote = quote
+        self.ipc = IPC()
 
     @property
     def quote(self):
@@ -42,8 +44,8 @@ class Worker:
     def generate_priv_key(cls):
         """
         Generate a new hex serialized priv key
-        
-        :return: 
+
+        :return:
         """
         priv = SigningKey.generate(curve=SECP256k1)
         return priv.to_string().hex()
@@ -57,7 +59,7 @@ class Worker:
 
         See ref implementation: https://github.com/vkobel/ethereum-generate-wallet
 
-        :return: 
+        :return:
         """
         keccak = sha3.keccak_256()
 
@@ -136,24 +138,3 @@ class Worker:
         ).transact({'from': self.account})
 
         return tx
-
-    # def compute_task(self, secret_contract, bytecode, callable, args, callback,
-    #                  preprocessors):
-    def compute_task(self, bytecode, func_data, inputs, preprocessor, iv=None):
-        """
-        Pass to core the following:
-        1. the bytecode of the contract
-        2. the function data. e.g "ef9fc50b"
-        3. list of encrypted inputs.
-        4. the preprocessors
-        5. the IV for the AES encryption.
-
-        Get from core:
-        1. The output of the computation.
-        2. The signature of the output.
-        """
-        log.info('sending task to Core for private computation')
-        # TODO: invoke core
-        results = b''
-        sig = b''
-        return results, sig

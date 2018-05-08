@@ -58,7 +58,7 @@ class Worker:
     @classmethod
     def encode_call(cls, f_def, args):
         """
-        Encode a function call in rax transaction format.
+        Encode a function call in raw transaction format.
 
         :param f_def:
         :param args:

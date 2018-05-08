@@ -78,7 +78,7 @@ def task(request, secret_contract, worker, contract):
 
 def test_dynamic_encoding():
     """
-    Validating encodint logic against the last example documented here:
+    Validating encoding logic against the last example documented here:
      https://solidity.readthedocs.io/en/develop/abi-spec.html
 
     :return:

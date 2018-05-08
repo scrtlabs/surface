@@ -4,7 +4,8 @@ import pytest
 from rlp import encode
 
 from surface.__main__ import handle_task
-from tests.fixtures import contract, worker, w3, account, secret_contract
+from tests.fixtures import contract, worker, w3, account, secret_contract, \
+    token_contract
 
 DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
 

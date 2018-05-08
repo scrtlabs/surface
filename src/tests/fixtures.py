@@ -15,9 +15,8 @@ with open(CONFIG_PATH) as conf:
     CONFIG = json.load(conf)
 
 DATADIR = os.path.expanduser(CONFIG['DATADIR'])
-# CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
-CONTRACT_PATH = '/Users/fredfortier/Code/enigma/mvp0/coin-mixer-poc/dapp/build/contracts/Enigma.json'
-TOKEN_PATH = '/Users/fredfortier/Code/enigma/mvp0/coin-mixer-poc/dapp/build/contracts/EnigmaToken.json'
+CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
+TOKEN_PATH = os.path.join(PACKAGE_PATH, CONFIG['TOKEN_PATH'])
 
 
 # TODO: consider reading an environment variable so we can override the default if needed
@@ -44,14 +43,16 @@ def account(w3, request):
 
 
 @pytest.fixture
+def token_contract(w3, monkeypatch):
+    # monkeypatch.setattr('getpass.getpass', lambda x: '')
+    return load_contract(w3, TOKEN_PATH)
+
+
+@pytest.fixture
 def contract(w3, monkeypatch):
     # monkeypatch.setattr('getpass.getpass', lambda x: '')
     return load_contract(w3, CONTRACT_PATH)
 
-@pytest.fixture
-def token(w3, monkeypatch):
-    # monkeypatch.setattr('getpass.getpass', lambda x: '')
-    return load_contract(w3, TOKEN_PATH)
 
 @pytest.fixture
 def custodian_key(request):
@@ -70,7 +71,7 @@ def secret_contract(w3):
 
 
 @pytest.fixture
-def worker(contract, account, request):
+def worker(contract, account, request, token_contract):
     testdir = os.path.dirname(request.module.__file__)
     with open(os.path.join(testdir, 'data', 'workers.json')) as data_file:
         workers_data = json.load(data_file)
@@ -79,7 +80,8 @@ def worker(contract, account, request):
         worker: Worker = Worker(
             account=account,
             contract=contract,
-            url=worker_data['url'].encode('utf-8'),
+            token=token_contract,
+            url=worker_data['url'],
             signing_priv_key=worker_data['signing_priv_key'],
             quote=worker_data['quote'],
         )

@@ -6,7 +6,7 @@ from rlp import decode
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data, sign_proof
 from tests.fixtures import w3, account, contract, custodian_key, \
-    secret_contract, worker
+    secret_contract, worker, token_contract
 
 
 @pytest.mark.order1
@@ -33,7 +33,18 @@ def test_info(worker):
         ]]
     ]
 )
-def task(request, secret_contract, worker, contract):
+def task(request, token_contract, secret_contract, worker, contract):
+    """
+    Creating a new task for testing.
+
+    :param request:
+    :param secret_contract:
+    :param worker:
+    :param contract:
+    :return:
+    """
+    ENG_FEE = 1
+
     preprocessors = [b'rand()']
     # TODO: BROKEN, adjust based on JS test: coin-mixer-poc/dapp/test/enigma.js:47
     tx = worker.trigger_compute_task(
@@ -48,14 +59,13 @@ def task(request, secret_contract, worker, contract):
     assert len(args[1]) > 0
 
     yield event['args']['taskId']
-#
-#
-# @pytest.mark.order4
-# def test_get_task(task, secret_contract, worker):
-#     info = worker.get_task(secret_contract, task)
-#     assert len(info) > 0
-#
-#
+
+@pytest.mark.order4
+def test_get_task(task, secret_contract, worker):
+    info = worker.get_task(secret_contract, task)
+    assert len(info) > 0
+
+
 # @pytest.mark.order5
 # def test_commit_results(task, worker, custodian_key, secret_contract, contract):
 #     # TODO: BROKEN, adjust based on JS tests: coin-mixer-poc/dapp/test/enigma.js:162

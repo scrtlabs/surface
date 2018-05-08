@@ -1,10 +1,9 @@
-from binascii import unhexlify
-
 import pytest
-from rlp import decode
+from web3 import Web3
 
+from surface.communication.core import Worker
 from surface.communication.ethereum import Listener
-from surface.communication.ethereum.utils import event_data, sign_proof
+from surface.communication.ethereum.utils import event_data
 from tests.fixtures import w3, account, contract, custodian_key, \
     secret_contract, worker, token_contract
 
@@ -26,14 +25,19 @@ def test_info(worker):
 
 @pytest.mark.order3
 @pytest.fixture(
-    params=[
-        [b'0', [
-            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972',
-            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972'
-        ]]
+    params=[dict(
+        callable='mixAddresses(uint32,address[],uint)',
+        callback='distribute(uint32,address[])',
+        args=[0, [
+            '0xe2e4ff8dc77a4e9be15b3f244c29b99c7e8dd9d4',
+            '0x98f5dc60df5eb721162357091735cdb25abf1068'
+        ]],
+        preprocessors=[b'rand()'],
+        fee=1
+    )
     ]
 )
-def task(request, token_contract, secret_contract, worker, contract):
+def task(request, secret_contract, worker, contract):
     """
     Creating a new task for testing.
 
@@ -43,53 +47,85 @@ def task(request, token_contract, secret_contract, worker, contract):
     :param contract:
     :return:
     """
-    ENG_FEE = 1
-
-    preprocessors = [b'rand()']
-    # TODO: BROKEN, adjust based on JS test: coin-mixer-poc/dapp/test/enigma.js:47
     tx = worker.trigger_compute_task(
-        secret_contract, 'mixAddresses(uint,address[],uint)', request.param,
-        'distribute(uint,address[])', preprocessors, 1
+        secret_contract=secret_contract,
+        callable=request.param['callable'],
+        args=request.param['args'],
+        callback=request.param['callback'],
+        preprocessors=request.param['preprocessors'],
+        fee=request.param['fee']
     )
+
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
 
     # Making sure that we can parse the RLP arguments
-    args = Listener.parse_args(event['args']['callableArgs'])
+    args = Listener.parse_args(
+        event['args']['callable'],
+        event['args']['callableArgs']
+    )
     assert len(args[1]) > 0
 
-    yield event['args']['taskId']
+    task = worker.get_task(secret_contract, event['args']['taskId'])
+    assert len(task) > 0
 
-@pytest.mark.order4
-def test_get_task(task, secret_contract, worker):
-    info = worker.get_task(secret_contract, task)
-    assert len(info) > 0
+    yield event['args']
 
 
-# @pytest.mark.order5
-# def test_commit_results(task, worker, custodian_key, secret_contract, contract):
-#     # TODO: BROKEN, adjust based on JS tests: coin-mixer-poc/dapp/test/enigma.js:162
-#     args = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
-#     bytecode = contract.web3.eth.getCode(
-#         contract.web3.toChecksumAddress(secret_contract)
-#     )
-#     results = [b'uint dealId', b'0', b'address[] destAddresses', b'test']
-#     # TODO: this should be done in core, for testing purposes only
-#     proof = sign_proof(
-#         contract=contract,
-#         secret_contract=secret_contract,
-#         callable=b'mixAddresses',
-#         args=args,
-#         bytecode=bytecode,
-#         results=results,
-#         key=custodian_key,
-#     )
-#     tx = worker.commit_results(
-#         secret_contract, task, results, proof['signature']
-#     )
-#     # event = event_data(contract, tx, 'ValidateSig')
-#     event = event_data(contract, tx, 'SolveTask')
-#     assert event.args._success
-# 0xf73be9a6e78d51d07277bdf6356183352ef2dd34
-# 0x2a504b5e7ec284aca5b6f49716611237239f0b97
-# 0x627306090abaB3A6e1400e9345bC60c78a8BEf57
+def test_dynamic_encoding():
+    f_def = 'f(uint256,uint32[],bytes10,bytes)'
+    args = [0x123, [0x456, 0x789], b'1234567890', b'Hello, world!']
+    hash = Worker.encode_call(f_def, args)
+    ref = (
+        '0x8be65246'
+        '0000000000000000000000000000000000000000000000000000000000000123'
+        '0000000000000000000000000000000000000000000000000000000000000080'
+        '3132333435363738393000000000000000000000000000000000000000000000'
+        '00000000000000000000000000000000000000000000000000000000000000e0'
+        '0000000000000000000000000000000000000000000000000000000000000002'
+        '0000000000000000000000000000000000000000000000000000000000000456'
+        '0000000000000000000000000000000000000000000000000000000000000789'
+        '000000000000000000000000000000000000000000000000000000000000000d'
+        '48656c6c6f2c20776f726c642100000000000000000000000000000000000000'
+    )
+    assert hash == ref
+    pass
+
+
+@pytest.fixture(
+    params=[
+        [0, [
+            Web3.toChecksumAddress(
+                '0xe2e4ff8dc77a4e9be15b3f244c29b99c7e8dd9d4'
+            ),
+            Web3.toChecksumAddress(
+                '0x98f5dc60df5eb721162357091735cdb25abf1068'
+            )
+        ]]
+    ]
+)
+def results(request):
+    """
+    Simulate computation results.
+
+    :return:
+    """
+    return request.param
+
+
+def test_commit_results(task, worker, secret_contract, contract, results):
+    bytecode = contract.web3.eth.getCode(
+        contract.web3.toChecksumAddress(secret_contract)
+    )
+    data, sig = worker.sign_data(
+        encoded_args=task['callableArgs'],
+        callback=task['callback'],
+        results=results,
+        bytecode=bytecode,
+    )
+    tx = worker.commit_results(
+        secret_contract, task.taskId, data, sig['signature']
+    )
+    # TODO: broken, not sure what happened
+    # event = event_data(contract, tx, 'CommitResults')
+    # assert event.args._success

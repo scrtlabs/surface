@@ -2,8 +2,7 @@ import json
 import os
 
 import eth_abi
-import sha3
-from ecdsa import SigningKey, SECP256k1
+import re
 from web3.contract import Contract
 from web3.utils.events import get_event_data
 from web3 import Web3, HTTPProvider
@@ -64,34 +63,55 @@ def event_data(contract: Contract, tx, event_name):
     return get_event_data(event_abi, log_entry)
 
 
-def sign_proof(contract, secret_contract, callable, args, bytecode, results,
-               key):
+def parse_arg_types(f_def):
     """
-    Create a signed hash of all inputs and outputs of a computation task
-    Should be in core
+    Parse the argument types from a fn definition.
 
-    :param secret_contract:
-    :param callable:
-    :param args:
-    :param bytecode:
-    :param key:
+    :param f_def:
     :return:
     """
-    bcontract = bytearray(secret_contract, 'utf8')
-    msg = eth_abi.encode_single('bytes32', callable)
-    msg += eth_abi.encode_single('bytes32', b'pez')
-    # for arg in args:
-    #     msg += eth_abi.encode_single('bytes32', arg)
-    #
-    # for result in results:
-    #     msg += eth_abi.encode_single('bytes32', result)
 
-    # TODO: Is it the same as ECDSA? (Sig with prefeix)
-    attribDict = contract.web3.eth.account.sign(
-        message=b'TestTest',
-        private_key=key,
-    )
-    return attribDict
+    try:
+        f_name = re.compile('^(.*)\(').findall(f_def)[0]
+
+    except Exception:
+        raise ValueError(
+            'Could not extract function name from definition'
+        )
+
+    try:
+        arg_types = re.compile('{}\((.*)\)'.format(f_name)).findall(
+            f_def
+        )[0].split(',')
+
+    except Exception:
+        raise ValueError(
+            'Count not extract argument tyoes from definition.'
+        )
+
+    return arg_types
+
+
+def cast_arg(arg_type, arg):
+    """
+    Cast a bytes arg to its type.
+
+    :param arg_type:
+    :param arg:
+    :return:
+    """
+    if arg_type.startswith('uint') or arg_type.startswith('int'):
+        return Web3.toInt(arg)
+
+    elif arg_type.startswith('address'):
+        return Web3.toChecksumAddress(arg.decode('utf-8'))
+
+    elif arg_type.startswith('string'):
+        return arg.decode('utf-8')
+
+    else:
+        # TODO: cover all types
+        raise ValueError('Unsupported type: {}'.format(arg_type))
 
 
 def unlock_wallet(provider):

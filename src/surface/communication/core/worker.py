@@ -1,8 +1,11 @@
 import sha3
 from ecdsa import SigningKey, SECP256k1
+from eth_abi import encode_abi
 from logbook import Logger
+from web3 import Web3
 
-from surface.communication.ethereum.utils import event_data
+from surface.communication.ethereum import Listener
+from surface.communication.ethereum.utils import parse_arg_types, event_data
 from surface.communication.ias import Quote
 from rlp import encode
 from surface.communication.core import IPC
@@ -51,6 +54,24 @@ class Worker:
         """
         priv = SigningKey.generate(curve=SECP256k1)
         return priv.to_string().hex()
+
+    @classmethod
+    def encode_call(cls, f_def, args):
+        """
+        Encode a function call in rax transaction format.
+
+        :param f_def:
+        :param args:
+        :return:
+        """
+        arg_types = parse_arg_types(f_def)
+        keccak = sha3.keccak_256()
+        keccak.update(f_def.encode('utf-8'))
+
+        f_id = '0x{}'.format(keccak.hexdigest()[:8])
+        encoded = encode_abi(arg_types, args).hex()
+        hash = '{}{}'.format(f_id, encoded)
+        return hash
 
     @property
     def signer(self):
@@ -126,7 +147,6 @@ class Worker:
             raise ValueError('Could not approve enough ENG to cover fee.')
 
         msg = encode(args)
-        # TODO: must call approve() first, see JS test
         tx = self.contract.functions.compute(
             secret_contract, callable, msg, callback, fee, preprocessors
         ).transact({'from': self.account})
@@ -156,8 +176,26 @@ class Worker:
         log.info(
             'solving task: {}'.format(secret_contract, task_id)
         )
+
         tx = self.contract.functions.commitResults(
             secret_contract, task_id, results, sig
         ).transact({'from': self.account})
 
         return tx
+
+    def sign_data(self, encoded_args, callback, results, bytecode):
+        """
+        Sign data for onchain verification.
+
+        :return:
+        """
+        data = Worker.encode_call(callback, results).encode('utf-8')
+        keccak = sha3.keccak_256()
+        keccak.update(encoded_args + data + bytecode)
+
+        # TODO: does not verify, the JS version does
+        sig = self.contract.web3.eth.account.sign(
+            message=keccak.digest(),
+            private_key=self.signing_priv_key,
+        )
+        return data, sig

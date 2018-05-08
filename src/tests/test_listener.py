@@ -26,9 +26,9 @@ def test_handle_task(w3, worker, args, secret_contract):
     task = dict(
         callingContract=secret_contract,
         taskId=0,
-        callable='mixAddresses(uint,address[],uint)',
+        callable='mixAddresses(uint32,address[],uint)',
         callableArgs=args,
-        callback='distribute(uint,address[])',
+        callback='distribute(uint32,address[])',
         fee=1,
         preprocessors=preprocessors,
     )

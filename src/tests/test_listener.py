@@ -12,8 +12,8 @@ DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
 @pytest.fixture(
     params=[
         [b'0', [
-            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972',
-            b'01dd68b96c0a3704f006e419425aca9bcddc5704e3595c29750014733bf756e966debc595a44fa6f83a40e62292c1bbaf610a7935e8a04b3370d64728737dca24dce8f20d995239d86af034ccf3261f97b8137b972'
+            b'a66652d18368c744032383a23920c60ff7de05ea22b63c65c87c3bdac32c3dfe2af3514b395dfb0e72015128874dea27f9df30724889a1d27596cf18105e1a9de2ba95d9f8a04a33c23b',
+            b'8a7f49ad6d431ed4f7ce9959510c055807461bfbd17069409f5a765ee4a11cb818c9fad619e0c924d5866279b49c30aeee13054c92516d11c39ae88a41d77d2235768da9d85f9de226e1'
         ]]
     ]
 )
@@ -22,6 +22,15 @@ def args(request):
 
 
 def test_handle_task(w3, worker, args, secret_contract):
+    """
+    Handles a mock task
+
+    :param w3:
+    :param worker:
+    :param args:
+    :param secret_contract:
+    :return:
+    """
     preprocessors = [b'rand()']
     task = dict(
         callingContract=secret_contract,

@@ -87,7 +87,7 @@ def handle_task(w3, worker, task, core_socket):
     worker.commit_results(
         secret_contract=task['callingContract'],
         task_id=task['taskId'],
-        results=results,
+        data=results,
         sig=sig,
     )
 

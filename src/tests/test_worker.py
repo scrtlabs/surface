@@ -28,9 +28,13 @@ def test_info(worker):
     params=[dict(
         callable='mixAddresses(uint32,address[],uint)',
         callback='distribute(uint32,address[])',
+        # args=[0, [
+        #     'a66652d18368c744032383a23920c60ff7de05ea22b63c65c87c3bdac32c3dfe2af3514b395dfb0e72015128874dea27f9df30724889a1d27596cf18105e1a9de2ba95d9f8a04a33c23b',
+        #     '8a7f49ad6d431ed4f7ce9959510c055807461bfbd17069409f5a765ee4a11cb818c9fad619e0c924d5866279b49c30aeee13054c92516d11c39ae88a41d77d2235768da9d85f9de226e1'
+        # ]],
         args=[0, [
-            'a66652d18368c744032383a23920c60ff7de05ea22b63c65c87c3bdac32c3dfe2af3514b395dfb0e72015128874dea27f9df30724889a1d27596cf18105e1a9de2ba95d9f8a04a33c23b',
-            '8a7f49ad6d431ed4f7ce9959510c055807461bfbd17069409f5a765ee4a11cb818c9fad619e0c924d5866279b49c30aeee13054c92516d11c39ae88a41d77d2235768da9d85f9de226e1'
+            '0x1d1b9890d277de99fa953218d4c02cac764641d7',
+            '0x4b8d2c72980af7e6a0952f87146d6a225922acd7'
         ]],
         preprocessors=[b'rand()'],
         fee=1

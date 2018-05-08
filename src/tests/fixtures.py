@@ -3,7 +3,7 @@ import os
 import pytest
 from web3 import Web3, HTTPProvider
 
-from surface.communication.ethereum.utils import enigma_contract
+from surface.communication.ethereum.utils import load_contract
 from surface.communication.core import Worker
 import surface
 
@@ -15,7 +15,11 @@ with open(CONFIG_PATH) as conf:
     CONFIG = json.load(conf)
 
 DATADIR = os.path.expanduser(CONFIG['DATADIR'])
-CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
+# CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
+CONTRACT_PATH = '/Users/fredfortier/Code/enigma/mvp0/coin-mixer-poc/dapp/build/contracts/Enigma.json'
+TOKEN_PATH = '/Users/fredfortier/Code/enigma/mvp0/coin-mixer-poc/dapp/build/contracts/EnigmaToken.json'
+
+
 # TODO: consider reading an environment variable so we can override the default if needed
 
 
@@ -42,8 +46,12 @@ def account(w3, request):
 @pytest.fixture
 def contract(w3, monkeypatch):
     # monkeypatch.setattr('getpass.getpass', lambda x: '')
-    return enigma_contract(w3, CONTRACT_PATH)
+    return load_contract(w3, CONTRACT_PATH)
 
+@pytest.fixture
+def token(w3, monkeypatch):
+    # monkeypatch.setattr('getpass.getpass', lambda x: '')
+    return load_contract(w3, TOKEN_PATH)
 
 @pytest.fixture
 def custodian_key(request):
@@ -72,7 +80,7 @@ def worker(contract, account, request):
             account=account,
             contract=contract,
             url=worker_data['url'].encode('utf-8'),
-            sig_key=worker_data['sig_key'],
+            signing_priv_key=worker_data['signing_priv_key'],
             quote=worker_data['quote'],
         )
         yield worker

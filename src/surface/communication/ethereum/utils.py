@@ -2,6 +2,8 @@ import json
 import os
 
 import eth_abi
+import sha3
+from ecdsa import SigningKey, SECP256k1
 from web3.contract import Contract
 from web3.utils.events import get_event_data
 from web3 import Web3, HTTPProvider
@@ -9,7 +11,7 @@ import getpass
 from requests.exceptions import ConnectionError
 
 
-def enigma_contract(w3, contract_location, address=None) -> Contract:
+def load_contract(w3, contract_location, address=None) -> Contract:
     """
     Get the Enigma contract object from the app path or dev path.
 
@@ -83,7 +85,7 @@ def sign_proof(contract, secret_contract, callable, args, bytecode, results,
     #
     # for result in results:
     #     msg += eth_abi.encode_single('bytes32', result)
-    
+
     # TODO: Is it the same as ECDSA? (Sig with prefeix)
     attribDict = contract.web3.eth.account.sign(
         message=b'TestTest',
@@ -93,7 +95,6 @@ def sign_proof(contract, secret_contract, callable, args, bytecode, results,
 
 
 def unlock_wallet(provider):
-
     w3 = Web3(HTTPProvider(provider))
     w3.eth.enable_unaudited_features()
 

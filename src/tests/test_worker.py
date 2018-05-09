@@ -88,7 +88,7 @@ def test_dynamic_encoding():
     """
     f_def = 'f(uint256,uint32[],bytes10,bytes)'
     args = [0x123, [0x456, 0x789], b'1234567890', b'Hello, world!']
-    hash = Worker.encode_call(f_def, args)
+    function_hash = Worker.encode_call(f_def, args)
     ref = (
         '0x8be65246'
         '0000000000000000000000000000000000000000000000000000000000000123'
@@ -101,7 +101,7 @@ def test_dynamic_encoding():
         '000000000000000000000000000000000000000000000000000000000000000d'
         '48656c6c6f2c20776f726c642100000000000000000000000000000000000000'
     )
-    assert hash == ref
+    assert function_hash == ref
 
 
 @pytest.fixture(

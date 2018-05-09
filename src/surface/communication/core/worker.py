@@ -135,6 +135,7 @@ class Worker:
         :param fee:
         :return:
         """
+
         log.info(
             'executing computation on contract: {}'.format(secret_contract)
         )

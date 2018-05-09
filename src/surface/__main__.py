@@ -37,9 +37,10 @@ def start(datadir, provider):
     log.info('Starting up {} node.')
 
     # 1.1 Talk to Core, get quote
-    core_socket = core.IPC()
+    core_socket = core.IPC(1338)
     core_socket.connect()
-    results_json = json.loads(core_socket.get_report())
+    results_json = core_socket.get_report()
+    results_json = json.loads(results_json)
     report = results_json['report']
     signing_key = results_json['pubkey']
     # quote = generate_quote(report)  # TODO: Generate quote via swig
@@ -51,12 +52,14 @@ def start(datadir, provider):
         w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
     )
     # TODO: Fred: Please add the token contract(not sure which is it exactly)
+    # TODO: Is the token for testing only? I see it only in the `trigger` function.
     worker = core.Worker(
         account, eng_contract, token=None, ecdsa_pubkey=signing_key)
     worker.register()
 
     # 2.1 Listen for outside connection for exchanging keys.
     # TODO: Encryption key exchange protocol
+    core_socket.get_key()
 
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async

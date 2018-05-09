@@ -26,11 +26,13 @@ class IPC:
         self.socket.send_multipart([IPC.GET_REPORT])
         report_key_json = self.socket.recv_multipart()
         log.info(report_key_json)
-        return report_key_json[-1]
+        report_key_json = b''.join(report_key_json).decode()
+        log.info(report_key_json)
+        return report_key_json
 
     def get_key(self, *args):
         log.info('Asking Core for keys')
-        self.socket.send_multipart([IPC.GET_PUB_KEY, args])
+        self.socket.send_multipart([IPC.GET_PUB_KEY])
         pubkey = self.socket.recv_string()
         return pubkey
 

@@ -25,7 +25,6 @@ class IPC:
         log.info('Asking Core for SGX Report')
         self.socket.send_multipart([IPC.GET_REPORT])
         report_key_json = self.socket.recv_multipart()
-        log.info(report_key_json)
         report_key_json = b''.join(report_key_json).decode()
         log.info(report_key_json)
         return report_key_json
@@ -33,8 +32,8 @@ class IPC:
     def get_key(self, *args):
         log.info('Asking Core for keys')
         self.socket.send_multipart([IPC.GET_PUB_KEY])
-        pubkey = self.socket.recv_string()
-        return pubkey
+        results = self.socket.recv_multipart()
+        return results[0], results[-1]
 
     def exec_evm(self, bytecode, function, inputs, preprocessors, iv):
         """

@@ -43,6 +43,7 @@ def start(datadir, provider):
     results_json = json.loads(results_json)
     report = results_json['report']
     signing_key = results_json['pubkey']
+    log.info('ECDSA Signing Key: {}'.format(signing_key))
     # quote = generate_quote(report)  # TODO: Generate quote via swig
 
     # 1.2 Commit the quote to the Enigma Smart Contract
@@ -59,7 +60,9 @@ def start(datadir, provider):
 
     # 2.1 Listen for outside connection for exchanging keys.
     # TODO: Encryption key exchange protocol
-    core_socket.get_key()
+    signed, enc_pubkey = core_socket.get_key()
+    log.info('Encryption Pubkey: {}'.format(enc_pubkey))
+    log.info('Signature for the pubkey: {}'.format(signed))
 
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async

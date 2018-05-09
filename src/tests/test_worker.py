@@ -30,7 +30,7 @@ def test_info(worker):
 @pytest.mark.order3
 @pytest.fixture(
     params=[dict(
-        callable='mixAddresses(uint32,address[],uint)',
+        callable='mixAddresses(uint32,address[],uint256)',
         callback='distribute(uint32,address[])',
         # args=[0, [
         #     'a66652d18368c744032383a23920c60ff7de05ea22b63c65c87c3bdac32c3dfe2af3514b395dfb0e72015128874dea27f9df30724889a1d27596cf18105e1a9de2ba95d9f8a04a33c23b',
@@ -38,12 +38,10 @@ def test_info(worker):
         # ]],
         args=[0, [
             # These are these addresses encrypted by the DH of the PEM keys, using IV: 922a49d269f31ce6b8fe1e977550151a.
-            # 1. 0x4b8d2c72980af7e6a0952f87146d6a225922acd7
-            # 2. 0x1d1b9890d277de99fa953218d4c02cac764641d7
-            '0x4b8d2c72980af7e6a0952f87146d6a225922acd7',
-            '0x1d1b9890d277de99fa953218d4c02cac764641d7'
-            # '1f4ee6e722ad73f6d09ecc957b77f6ff386ed9816f0d36c2951b459d40d5752fef15cf8a66ef6b4adbad4474e27d7a3bfbd1979ba4497b91c208',
-            # '1f4ee3e12bab78adde9c919f7c21f4ad6461ded06f0d37969c14109d1581712dbc44cd8560eb3e18dbad384d3290f90355d322f3f5ff363604ff'
+            # '0x4B8D2c72980af7E6a0952F87146d6A225922acD7',
+            # '0x1d1B9890D277dE99fa953218D4C02CAC764641d7',
+            '1f4ee3c12b8b78adde9c919f7c21f4ad4461ded06f0d37b69c14109d1581710dbc44cd8560eb3e18fbad4331d3daee342316b8191e50fb84211c',
+            '1f4ee6e7228d73f6d09eec957b77f6df386ed9816f0d36c2951b659d60d5750fcf35cf8a66ef6b4adbad090de9e0d07d934a3fa30e623b25fb70',
         ]],
         preprocessors=[b'rand()'],
         fee=1
@@ -74,11 +72,11 @@ def task(w3, request, secret_contract, worker, contract):
     assert event.args._success
 
     # Making sure that we can parse the RLP arguments
-    args = Listener.parse_args(
-        event['args']['callable'],
-        event['args']['callableArgs']
-    )
-    assert len(args[1]) > 0
+    # args = Listener.parse_args(
+    #     event['args']['callable'],
+    #     event['args']['callableArgs']
+    # )
+    # assert len(args[1]) > 0
 
     task = worker.get_task(secret_contract, event['args']['taskId'])
     assert len(task) > 0
@@ -93,9 +91,12 @@ def test_dynamic_encoding():
 
     :return:
     """
-    f_def = 'f(uint256,uint32[],bytes10,bytes)'
-    args = [0x123, [0x456, 0x789], b'1234567890', b'Hello, world!']
+    # f_def = 'f(uint256,uint32[],bytes10,bytes)'
+    # args = [0x123, [0x456, 0x789], b'1234567890', b'Hello, world!']
+    args = [0x7, ['0xca35b7d915458ef540ade6068dfe2f44e8fa733c'], 0x3]
+    f_def = 'mixAddresses(uint32,address[],uint256)'
     function_hash = Worker.encode_call(f_def, args)
+    print(function_hash)
     ref = (
         '0x8be65246'
         '0000000000000000000000000000000000000000000000000000000000000123'
@@ -108,6 +109,7 @@ def test_dynamic_encoding():
         '000000000000000000000000000000000000000000000000000000000000000d'
         '48656c6c6f2c20776f726c642100000000000000000000000000000000000000'
     )
+    assert True
     assert function_hash == ref
 
 
@@ -192,3 +194,4 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
     w3.eth.waitForTransactionReceipt(tx)
     event = event_data(contract, tx, 'CommitResults')
     assert event.args._success
+

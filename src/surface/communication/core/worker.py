@@ -25,14 +25,8 @@ class Worker:
         self.token = token
         self._url = url
         self._ecdsa_pubkey = ecdsa_pubkey
-        #
-        # if signing_priv_key != '':
-        #     self._signing_priv_key = signing_priv_key
-        # else:
-        #     self._signing_priv_key = Worker.generate_priv_key()
 
         self._quote = quote
-        # self.ipc = IPC()
 
     @property
     def quote(self):
@@ -41,16 +35,6 @@ class Worker:
     @property
     def ecdsa_pubkey(self):
         return self._ecdsa_pubkey
-
-    # @classmethod
-    # def generate_priv_key(cls):
-    #     """
-    #     Generate a new hex serialized priv key
-    #
-    #     :return:
-    #     """
-    #     priv = SigningKey.generate(curve=SECP256k1)
-    #     return priv.to_string().hex()
 
     @classmethod
     def encode_call(cls, f_def, args):

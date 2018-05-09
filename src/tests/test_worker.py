@@ -145,10 +145,24 @@ def sign_data(w3, encoded_args, callback, results, bytecode, priv):
 
 def test_commit_results(w3, task, worker, secret_contract, contract, results,
                         workers_data):
+    """
+    Testing onchain commit and validation.
+
+    The first part mocks things which are happening in Core.
+
+    :param w3:
+    :param task:
+    :param worker:
+    :param secret_contract:
+    :param contract:
+    :param results:
+    :param workers_data:
+    :return:
+    """
+    # Code from here an below normally belong to Core
     bytecode = contract.web3.eth.getCode(
         contract.web3.toChecksumAddress(secret_contract)
     )
-
     worker_data = next(
         (w for w in workers_data if w['url'] == worker._url),
         None
@@ -165,6 +179,8 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
         bytecode=bytecode,
         priv=priv,
     )
+
+    # Code from here and below belongs to Surface
     tx = worker.commit_results(
         secret_contract, task.taskId, data, sig['signature']
     )

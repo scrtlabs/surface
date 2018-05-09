@@ -1,6 +1,7 @@
 import json
 import os
 import pytest
+from ecdsa import SECP256k1, SigningKey
 from web3 import Web3, HTTPProvider
 
 from surface.communication.ethereum.utils import load_contract
@@ -71,18 +72,27 @@ def secret_contract(w3):
 
 
 @pytest.fixture
-def worker(contract, account, request, token_contract):
+def workers_data(request):
     testdir = os.path.dirname(request.module.__file__)
     with open(os.path.join(testdir, 'data', 'workers.json')) as data_file:
         workers_data = json.load(data_file)
 
+    return workers_data
+
+
+@pytest.fixture
+def worker(contract, account, workers_data, token_contract):
     for worker_data in workers_data:
+        priv_bytes = bytearray.fromhex(worker_data['signing_priv_key'])
+        priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
+        pub = priv.get_verifying_key().to_string()
+
         worker: Worker = Worker(
             account=account,
             contract=contract,
             token=token_contract,
             url=worker_data['url'],
-            signing_priv_key=worker_data['signing_priv_key'],
+            ecdsa_pubkey=pub,
             quote=worker_data['quote'],
         )
         yield worker

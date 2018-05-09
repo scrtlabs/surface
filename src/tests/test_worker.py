@@ -1,11 +1,13 @@
 import pytest
+from ecdsa import SigningKey, SECP256k1
+from ethereum.utils import sha3
 from web3 import Web3
 
 from surface.communication.core import Worker
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data
 from tests.fixtures import w3, account, contract, custodian_key, \
-    secret_contract, worker, token_contract
+    secret_contract, worker, token_contract, workers_data
 
 
 @pytest.mark.order1
@@ -125,15 +127,43 @@ def results(request):
     return request.param
 
 
-def test_commit_results(w3, task, worker, secret_contract, contract, results):
+def sign_data(w3, encoded_args, callback, results, bytecode, priv):
+    """
+    Sign data for onchain verification.
+
+    :return:
+    """
+    data = Worker.encode_call(callback, results).encode('utf-8')
+    hash = sha3(encoded_args + data + bytecode)
+
+    sig = w3.eth.account.sign(
+        message=hash,
+        private_key=priv,
+    )
+    return data, sig
+
+
+def test_commit_results(w3, task, worker, secret_contract, contract, results,
+                        workers_data):
     bytecode = contract.web3.eth.getCode(
         contract.web3.toChecksumAddress(secret_contract)
     )
-    data, sig = worker.sign_data(
+
+    worker_data = next(
+        (w for w in workers_data if w['url'] == worker._url),
+        None
+    )
+    priv_bytes = bytearray.fromhex(worker_data['signing_priv_key'])
+    priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
+    priv = priv.to_string().hex()
+
+    data, sig = sign_data(
+        w3=w3,
         encoded_args=task['callableArgs'],
         callback=task['callback'],
         results=results,
         bytecode=bytecode,
+        priv=priv,
     )
     tx = worker.commit_results(
         secret_contract, task.taskId, data, sig['signature']

@@ -17,13 +17,16 @@ class IPC:
         self.socket = context.socket(zmq.REQ)
 
     def connect(self):
-        self.socket.connect('tcp://' + IPC.IP + ':' + str(self.port))
+        address = 'tcp://' + IPC.IP + ':' + str(self.port)
+        log.info('Connecting via zmq to: {}'.format(address))
+        self.socket.connect(address)
 
     def get_report(self, *args):
         log.info('Asking Core for SGX Report')
-        self.socket.send_multipart([IPC.GET_REPORT, args])
-        report = self.socket.recv_string()
-        return report
+        self.socket.send_multipart([IPC.GET_REPORT])
+        report_key_json = self.socket.recv_multipart()
+        log.info(report_key_json)
+        return report_key_json[-1]
 
     def get_key(self, *args):
         log.info('Asking Core for keys')

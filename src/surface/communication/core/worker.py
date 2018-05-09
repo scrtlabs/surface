@@ -1,8 +1,9 @@
-import sha3
+# import sha3
 from ecdsa import SigningKey, SECP256k1
 from eth_abi import encode_abi
 from logbook import Logger
 from web3 import Web3
+from ethereum.utils import sha3
 
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import parse_arg_types, event_data
@@ -14,8 +15,8 @@ log = Logger('Worker')
 
 
 class Worker:
-    def __init__(self, account, contract, token, url=''.encode(),
-                 signing_priv_key='', quote: Quote = ''):
+    def __init__(self, account, contract, token, ecdsa_pubkey,
+                 url='', quote: Quote = ''):
         """
         The worker is in charge of managing the tasks and talking to core.
         :param account:
@@ -28,32 +29,33 @@ class Worker:
         self.contract = contract
         self.token = token
         self._url = url
-
-        if signing_priv_key != '':
-            self._signing_priv_key = signing_priv_key
-        else:
-            self._signing_priv_key = Worker.generate_priv_key()
+        self._ecdsa_pubkey = ecdsa_pubkey
+        #
+        # if signing_priv_key != '':
+        #     self._signing_priv_key = signing_priv_key
+        # else:
+        #     self._signing_priv_key = Worker.generate_priv_key()
 
         self._quote = quote
-        self.ipc = IPC()
+        # self.ipc = IPC()
 
     @property
     def quote(self):
         return self._quote
 
     @property
-    def signing_priv_key(self):
-        return self._signing_priv_key
+    def ecdsa_pubkey(self):
+        return self._ecdsa_pubkey
 
-    @classmethod
-    def generate_priv_key(cls):
-        """
-        Generate a new hex serialized priv key
-
-        :return:
-        """
-        priv = SigningKey.generate(curve=SECP256k1)
-        return priv.to_string().hex()
+    # @classmethod
+    # def generate_priv_key(cls):
+    #     """
+    #     Generate a new hex serialized priv key
+    #
+    #     :return:
+    #     """
+    #     priv = SigningKey.generate(curve=SECP256k1)
+    #     return priv.to_string().hex()
 
     @classmethod
     def encode_call(cls, f_def, args):
@@ -65,10 +67,9 @@ class Worker:
         :return:
         """
         arg_types = parse_arg_types(f_def)
-        keccak = sha3.keccak_256()
-        keccak.update(f_def.encode('utf-8'))
+        hashed = sha3(f_def).hex()
 
-        f_id = '0x{}'.format(keccak.hexdigest()[:8])
+        f_id = '0x{}'.format(hashed[:8])
         encoded = encode_abi(arg_types, args).hex()
         hash = '{}{}'.format(f_id, encoded)
         return hash
@@ -84,15 +85,10 @@ class Worker:
 
         :return:
         """
-        keccak = sha3.keccak_256()
 
-        priv_bytes = bytearray.fromhex(self._signing_priv_key)
-        priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
-        pub = priv.get_verifying_key().to_string()
-
-        keccak.update(pub)
+        hashed = sha3(self.ecdsa_pubkey).hex()
         address = self.contract.web3.toChecksumAddress(
-            '0x{}'.format(keccak.hexdigest()[24:])
+            '0x{}'.format(hashed[24:])
         )
         return address
 
@@ -107,6 +103,7 @@ class Worker:
         :return:
         """
         log.info('registering account: {}'.format(self.account))
+        log.info('Acoounts, Signing key: {}'.format(self.signer))
         tx = self.contract.functions.register(
             self.url, self.signer, self.quote
         ).transact({'from': self.account, 'value': 1})
@@ -205,19 +202,19 @@ class Worker:
         ).transact({'from': self.account})
 
         return tx
-
-    def sign_data(self, encoded_args, callback, results, bytecode):
-        """
-        Sign data for onchain verification.
-
-        :return:
-        """
-        data = Worker.encode_call(callback, results).encode('utf-8')
-        keccak = sha3.keccak_256()
-        keccak.update(encoded_args + data + bytecode)
-
-        sig = self.contract.web3.eth.account.sign(
-            message=keccak.digest(),
-            private_key=self.signing_priv_key,
-        )
-        return data, sig
+    #
+    # def sign_data(self, encoded_args, callback, results, bytecode):
+    #     """
+    #     Sign data for onchain verification.
+    #
+    #     :return:
+    #     """
+    #     data = Worker.encode_call(callback, results).encode('utf-8')
+    #     keccak = sha3.keccak_256()
+    #     keccak.update(encoded_args + data + bytecode)
+    #
+    #     sig = self.contract.web3.eth.account.sign(
+    #         message=keccak.digest(),
+    #         private_key=self.signing_priv_key,
+    #     )
+    #     return data, sig

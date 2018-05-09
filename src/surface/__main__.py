@@ -38,7 +38,10 @@ def start(datadir, provider):
 
     # 1.1 Talk to Core, get quote
     core_socket = core.IPC()
-    report = core_socket.get_report()
+    core_socket.connect()
+    results_json = json.loads(core_socket.get_report())
+    report = results_json['report']
+    signing_key = results_json['pubkey']
     # quote = generate_quote(report)  # TODO: Generate quote via swig
 
     # 1.2 Commit the quote to the Enigma Smart Contract
@@ -47,7 +50,9 @@ def start(datadir, provider):
     eng_contract = utils.load_contract(
         w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
     )
-    worker = core.Worker(account, eng_contract)
+    # TODO: Fred: Please add the token contract(not sure which is it exactly)
+    worker = core.Worker(
+        account, eng_contract, token=None, ecdsa_pubkey=signing_key)
     worker.register()
 
     # 2.1 Listen for outside connection for exchanging keys.
@@ -56,6 +61,7 @@ def start(datadir, provider):
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async
     listener: ethereum.Listener = ethereum.Listener(eng_contract)
+    log.info('Listenning for new tasks')
     for task, args in listener.watch():
         # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
         handle_task(w3, worker, task, core_socket)

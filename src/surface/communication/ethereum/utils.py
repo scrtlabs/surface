@@ -4,6 +4,7 @@ import os
 import eth_abi
 import re
 from web3.contract import Contract
+from web3.exceptions import MismatchedABI
 from web3.utils.events import get_event_data
 from web3 import Web3, HTTPProvider
 import getpass
@@ -58,9 +59,18 @@ def event_data(contract: Contract, tx, event_name):
     :return:
     """
     receipt = contract.web3.eth.getTransactionReceipt(tx)
-    log_entry = receipt['logs'][0]
-    event_abi = contract._find_matching_event_abi(event_name)
-    return get_event_data(event_abi, log_entry)
+    data = None
+    for log_entry in receipt['logs']:
+        try:
+            event_abi = contract._find_matching_event_abi(event_name)
+            data = get_event_data(event_abi, log_entry)
+        except MismatchedABI:
+            pass
+
+    if not data:
+        raise ValueError('event not found {}'.format(event_name))
+
+    return data
 
 
 def parse_arg_types(f_def):

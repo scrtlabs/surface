@@ -9,10 +9,12 @@ from tests.fixtures import w3, account, contract, custodian_key, \
 
 
 @pytest.mark.order1
-def test_register(worker, contract):
+def test_register(w3, worker, contract):
     # This will fail if already registered
     # Redeploy the contract to clear the state
     tx = worker.register()
+    w3.eth.waitForTransactionReceipt(tx)
+
     event = event_data(contract, tx, 'Register')
     assert event.args._success
 
@@ -41,7 +43,7 @@ def test_info(worker):
     )
     ]
 )
-def task(request, secret_contract, worker, contract):
+def task(w3, request, secret_contract, worker, contract):
     """
     Creating a new task for testing.
 
@@ -59,6 +61,7 @@ def task(request, secret_contract, worker, contract):
         preprocessors=request.param['preprocessors'],
         fee=request.param['fee']
     )
+    w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
@@ -122,7 +125,7 @@ def results(request):
     return request.param
 
 
-def test_commit_results(task, worker, secret_contract, contract, results):
+def test_commit_results(w3, task, worker, secret_contract, contract, results):
     bytecode = contract.web3.eth.getCode(
         contract.web3.toChecksumAddress(secret_contract)
     )
@@ -135,6 +138,6 @@ def test_commit_results(task, worker, secret_contract, contract, results):
     tx = worker.commit_results(
         secret_contract, task.taskId, data, sig['signature']
     )
-    # TODO: broken, not sure what happened
-    # event = event_data(contract, tx, 'CommitResults')
-    # assert event.args._success
+    w3.eth.waitForTransactionReceipt(tx)
+    event = event_data(contract, tx, 'CommitResults')
+    assert event.args._success

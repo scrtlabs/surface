@@ -71,13 +71,6 @@ def task(w3, request, secret_contract, worker, contract):
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
 
-    # Making sure that we can parse the RLP arguments
-    # args = Listener.parse_args(
-    #     event['args']['callable'],
-    #     event['args']['callableArgs']
-    # )
-    # assert len(args[1]) > 0
-
     task = worker.get_task(secret_contract, event['args']['taskId'])
     assert len(task) > 0
 

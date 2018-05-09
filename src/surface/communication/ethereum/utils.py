@@ -110,18 +110,24 @@ def cast_arg(arg_type, arg):
     :param arg:
     :return:
     """
-    if arg_type.startswith('uint') or arg_type.startswith('int'):
-        return Web3.toInt(arg)
+    # TODO: cover all types
+    try:
+        if arg_type.startswith('uint') or arg_type.startswith('int'):
+            return Web3.toInt(arg)
 
-    elif arg_type.startswith('address'):
-        return Web3.toChecksumAddress(arg.decode('utf-8'))
+        elif arg_type.startswith('address'):
+            return Web3.toChecksumAddress(arg.decode('utf-8'))
 
-    elif arg_type.startswith('string'):
-        return arg.decode('utf-8')
+        elif arg_type.startswith('string'):
+            return arg.decode('utf-8')
 
-    else:
-        # TODO: cover all types
-        raise ValueError('Unsupported type: {}'.format(arg_type))
+        else:
+            return arg
+
+    except ValueError:
+        # Sometimes, arguments are encrypted which means that we can't cast
+        # them but want to return their bytes value
+        return arg
 
 
 def unlock_wallet(provider):

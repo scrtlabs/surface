@@ -62,6 +62,11 @@ def start(datadir, provider):
 
 
 def handle_task(w3, worker, task, core_socket):
+    # TODO: this is hard to unit test
+    # I think that we should allow a mock core with the same properties of core
+    # but returning mock results. We should be able to decouple unit testing of
+    # surface from core.
+
     # 3. Compute the task
     bytecode = w3.eth.getCode(
         w3.toChecksumAddress(task['callingContract']))

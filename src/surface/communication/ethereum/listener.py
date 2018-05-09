@@ -3,7 +3,8 @@ from time import sleep
 from logbook import Logger
 from rlp import decode
 
-from surface.communication.ethereum.utils import parse_arg_types, cast_arg
+from surface.communication.ethereum.utils import parse_arg_types, cast_arg, \
+    event_data
 
 log = Logger('listener')
 
@@ -55,6 +56,35 @@ class Listener:
         return task, args
 
     def watch(self):
+        """
+        Query each block for a ComputeTask Event
+
+        :yield: A ComputeTask dictionary
+        """
+
+        # I was not able to make an event filter work so I'm using a block
+        # filter and querying each block for the kind of event which we are
+        # looking for.
+        block_filter = self.contract.web3.eth.filter('latest')
+        while True:
+            for block_hash in block_filter.get_new_entries():
+                block = self.contract.web3.eth.getBlock(block_hash)
+                for tx in block['transactions']:
+                    try:
+                        event = event_data(self.contract, tx, 'ComputeTask')
+                        if event.address == self.contract.address:
+                            task = event['args']
+                            args = self.parse_args(
+                                task['callable'], task['callableArgs']
+                            )
+                            yield task, args
+
+                    except ValueError:
+                        pass
+
+            sleep(self.POLLING_INTERVAL)
+
+    def watch_v1(self):
         """
         Watch the Enigma contract's state.
         Yields when there's a new task for the worker.

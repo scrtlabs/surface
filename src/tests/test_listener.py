@@ -1,20 +1,38 @@
+from time import sleep
+
 import os
 
 import pytest
+from hexbytes import HexBytes
 from rlp import encode
 
-from surface.__main__ import handle_task
+from surface.communication.core import Worker
+from surface.communication.ethereum import Listener
+from surface.communication.ethereum.utils import event_data
 from tests.fixtures import contract, worker, w3, account, secret_contract, \
-    token_contract
+    token_contract, PACKAGE_PATH, CONFIG
 
 DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')
+
+
+def test_watch(contract):
+    """
+    Test the listener watch function.
+    :return:
+    """
+
+    listener = Listener(contract)
+
+    # TODO: Elichai, please review this and see message on Slack
+    for task, args in listener.watch():
+        print(task)
 
 
 @pytest.fixture(
     params=[
         [b'0', [
-            b'a66652d18368c744032383a23920c60ff7de05ea22b63c65c87c3bdac32c3dfe2af3514b395dfb0e72015128874dea27f9df30724889a1d27596cf18105e1a9de2ba95d9f8a04a33c23b',
-            b'8a7f49ad6d431ed4f7ce9959510c055807461bfbd17069409f5a765ee4a11cb818c9fad619e0c924d5866279b49c30aeee13054c92516d11c39ae88a41d77d2235768da9d85f9de226e1'
+            b'0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f',
+            b'0xf25186b5081ff5ce73482ad761db0eb0d25abfbf'
         ]]
     ]
 )
@@ -42,5 +60,5 @@ def test_handle_task(w3, worker, args, secret_contract):
         fee=1,
         preprocessors=preprocessors,
     )
-    handle_task(w3, worker, task)
-
+    # TODO: this is too hard to test, need to break this up
+    # handle_task(w3, worker, task, None)

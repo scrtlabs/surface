@@ -35,8 +35,11 @@ def test_info(worker):
         #     '8a7f49ad6d431ed4f7ce9959510c055807461bfbd17069409f5a765ee4a11cb818c9fad619e0c924d5866279b49c30aeee13054c92516d11c39ae88a41d77d2235768da9d85f9de226e1'
         # ]],
         args=[0, [
-            '0x1d1b9890d277de99fa953218d4c02cac764641d7',
-            '0x4b8d2c72980af7e6a0952f87146d6a225922acd7'
+            # These are these addresses encrypted by the DH of the PEM keys, using IV: 922a49d269f31ce6b8fe1e977550151a.
+            # 1. 0x4b8d2c72980af7e6a0952f87146d6a225922acd7
+            # 2. 0x1d1b9890d277de99fa953218d4c02cac764641d7
+            '1f4ee6e722ad73f6d09ecc957b77f6ff386ed9816f0d36c2951b459d40d5752fef15cf8a66ef6b4adbad4474e27d7a3bfbd1979ba4497b91c208',
+            '1f4ee3e12bab78adde9c919f7c21f4ad6461ded06f0d37969c14109d1581712dbc44cd8560eb3e18dbad384d3290f90355d322f3f5ff363604ff'
         ]],
         preprocessors=[b'rand()'],
         fee=1

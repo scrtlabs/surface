@@ -35,7 +35,7 @@ class IPC:
         results = self.socket.recv_multipart()
         return results[0], results[-1]
 
-    def exec_evm(self, bytecode, function, inputs, preprocessors, iv):
+    def exec_evm(self, bytecode, inputs, preprocessors, function=None, iv=None):
         """
         Pass to core the following:
         1. the bytecode of the contract
@@ -49,9 +49,13 @@ class IPC:
         2. The signature of the output.
         """
         log.info('sending task to Core for private computation')
+        preprocessors = [pre.decode().strip('\x00') for pre in preprocessors],
+        # TEST_INPUTS = ['1f4ee3c12b8b78adde9c919f7c21f4ad4461ded06f0d37b69c14109d1581710dbc44cd8560eb3e18fbad4331d3daee342316b8191e50fb84211c',
+        #                '1f4ee6e7228d73f6d09eec957b77f6df386ed9816f0d36c2951b659d60d5750fcf35cf8a66ef6b4adbad090de9e0d07d934a3fa30e623b25fb70']
         args = {'bytecode': bytecode,
                 'function': function,
-                'inputs': inputs,
+                'taskid': inputs[0],
+                'inputs': [i.decode() for i in inputs[1]],
                 'preprocessors': preprocessors,
                 'iv': iv}
         self.socket.send_multipart([IPC.EXEC_EVM, json.dumps(args).encode()])

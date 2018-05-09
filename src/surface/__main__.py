@@ -66,7 +66,7 @@ def start(datadir, provider):
 
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async
-    listener: ethereum.Listener = ethereum.Listener(eng_contract)
+    listener = ethereum.Listener(eng_contract)
     log.info('Listenning for new tasks')
     for task, args in listener.watch():
         # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit

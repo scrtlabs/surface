@@ -30,7 +30,7 @@ def load_contract(w3, contract_location, address=None) -> Contract:
         raise FileNotFoundError(contract_location)
 
     with open(contract_location) as handle:
-        contract_json: str = json.load(handle)
+        contract_json = json.load(handle)
 
     # If not address, default to the first network found
     if address is None:

@@ -172,9 +172,15 @@ class Worker:
         :param sig:
         :return:
         """
+        output = dict(
+            secret_contract=secret_contract,
+            task_id=task_id,
+            data=data,
+            sig=sig
+        )
         log.info(
-            'committing results for task: {} {}'.format(
-                secret_contract, task_id
+            'committing results for task: {}'.format(
+                output
             )
         )
         tx = self.contract.functions.commitResults(

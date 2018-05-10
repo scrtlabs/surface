@@ -93,7 +93,7 @@ def handle_task(w3, worker, task, core_socket, args):
 
     # TODO: what happens if this worker rejects a task?
     # TODO: how does the worker know if he is selected to perform the task?
-    results = core_socket.exec_evm(
+    sig, results = core_socket.exec_evm(
         bytecode,
         # TODO: Check if arguments are right.
         # TODO: Discuss where the IV comes from
@@ -103,6 +103,10 @@ def handle_task(w3, worker, task, core_socket, args):
         #TODO: change IV
         iv='922a49d269f31ce6b8fe1e977550151a'
     )
+
+    print(results)
+    # results are a just list of addresses.
+    # sign is only on ''.join(results)
 
     # 4. Commit the output back to the contract
     worker.commit_results(

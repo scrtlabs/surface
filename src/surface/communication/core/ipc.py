@@ -59,5 +59,9 @@ class IPC:
                 'preprocessors': preprocessors,
                 'iv': iv}
         self.socket.send_multipart([IPC.EXEC_EVM, json.dumps(args).encode()])
-        output = self.socket.recv_string()
-        return output
+        output = self.socket.recv_multipart()
+        sig = output[0]
+        result = output[1]
+        log.info('Outputs: {}'.format(result))
+        log.info("Signature of outputs: {}".format(sig))
+        return sig, result

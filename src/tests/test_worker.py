@@ -110,10 +110,10 @@ def test_dynamic_encoding():
     params=[
         [0, [
             Web3.toChecksumAddress(
-                '0x1d1b9890d277de99fa953218d4c02cac764641d7'
+                '0x6330a553fc93768f612722bb8c2ec78ac90b3bbc'
             ),
             Web3.toChecksumAddress(
-                '0x4b8d2c72980af7e6a0952f87146d6a225922acd7'
+                '0x5aeda56215b167893e80b4fe645ba6d5bab767de'
             )
         ]]
     ]

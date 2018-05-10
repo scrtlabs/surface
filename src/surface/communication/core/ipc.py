@@ -6,12 +6,12 @@ log = Logger('Node')
 
 
 class IPC:
-    IP = '127.0.0.1'
+    IP = 'localhost'
     GET_REPORT = 'getreport'.encode()
     GET_PUB_KEY = 'getpubkey'.encode()
     EXEC_EVM = 'execevm'.encode()
 
-    def __init__(self, port=1337):
+    def __init__(self, port=1338):
         self.port = port
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)

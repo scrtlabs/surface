@@ -87,7 +87,7 @@ def worker(contract, account, workers_data, token_contract):
         priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
         pub = priv.get_verifying_key().to_string()
 
-        worker: Worker = Worker(
+        worker = Worker(
             account=account,
             contract=contract,
             token=token_contract,

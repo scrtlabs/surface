@@ -66,14 +66,15 @@ def start(datadir, provider):
 
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async
-    listener: ethereum.Listener = ethereum.Listener(eng_contract)
+    listener = ethereum.Listener(eng_contract)
     log.info('Listenning for new tasks')
     for task, args in listener.watch():
         # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
-        handle_task(w3, worker, task, core_socket)
+        handle_task(w3, worker, task, core_socket, args)
 
 
-def handle_task(w3, worker, task, core_socket):
+def handle_task(w3, worker, task, core_socket, args):
+    log.debug('The task:', task)
     # TODO: this is hard to unit test
     # I think that we should allow a mock core with the same properties of core
     # but returning mock results. We should be able to decouple unit testing of
@@ -82,23 +83,30 @@ def handle_task(w3, worker, task, core_socket):
     # 3. Compute the task
     bytecode = w3.eth.getCode(
         w3.toChecksumAddress(task['callingContract']))
+    bytecode = bytes(bytecode).hex()
     log.info('the bytecode: {}'.format(bytecode))
 
     # The arguments are now RLP encoded
-    args = Listener.parse_args(task['callable'], task['callableArgs'])
-    log.info('the callable functin arguments: {}'.format(args))
+    # args = worker.encode_call(task['callable'], task['callableArgs'])
+    # args = Listener.parse_args(task['callable'], task['callableArgs'])
+    # log.info('the callable functin arguments: {}'.format(args))
 
     # TODO: what happens if this worker rejects a task?
     # TODO: how does the worker know if he is selected to perform the task?
-    results, sig = core_socket.exec_evm(
+    sig, results = core_socket.exec_evm(
         bytecode,
         # TODO: Check if arguments are right.
         # TODO: Discuss where the IV comes from
-        func_data=task['callable'],
+        function=task['callable'],
         inputs=args,
-        preprocessor=task['preprocessors'],
-        # iv=IV
+        preprocessors=task['preprocessors'],
+        #TODO: change IV
+        iv='922a49d269f31ce6b8fe1e977550151a'
     )
+
+    print(results)
+    # results are a just list of addresses.
+    # sign is only on ''.join(results)
 
     # 4. Commit the output back to the contract
     worker.commit_results(

@@ -1,4 +1,5 @@
 import pytest
+import sys
 from ecdsa import SigningKey, SECP256k1
 from ethereum.utils import sha3
 from web3 import Web3

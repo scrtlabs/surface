@@ -44,7 +44,6 @@ rlp==0.6.0
 scrypt==0.8.6
 semantic-version==2.6.0
 six==1.11.0
--e git+git@github.com:enigmampc/surface.git@2dec8a3348cec385b604fecc6b6b985d87396266#egg=surface
 toolz==0.9.0
 urllib3==1.22
 web3==4.2.0

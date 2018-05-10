@@ -98,8 +98,9 @@ def handle_task(w3, worker, task, core_socket, args):
         # TODO: Check if arguments are right.
         # TODO: Discuss where the IV comes from
         function=task['callable'],
-        inputs=args,
+        callableArgs=task['callableArgs'].hex(),
         preprocessors=task['preprocessors'],
+        callback=task['callback'],
         #TODO: change IV
         iv='922a49d269f31ce6b8fe1e977550151a'
     )
@@ -109,11 +110,18 @@ def handle_task(w3, worker, task, core_socket, args):
     # sign is only on ''.join(results)
 
     # 4. Commit the output back to the contract
+    results_dict = {
+        'secret_contract': task['callingContract'],
+        'task_id': task['taskId'],
+        'data': results.decode(),
+        'sig': sig.hex(),
+    }
+    print(results_dict)
     worker.commit_results(
-        secret_contract=task['callingContract'],
-        task_id=task['taskId'],
-        data=results,
-        sig=sig,
+        secret_contract=results_dict['secret_contract'],
+        task_id=results_dict['task_id'],
+        data=results_dict['data'],
+        sig=results_dict['sig'],
     )
 
 

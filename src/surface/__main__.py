@@ -4,6 +4,7 @@ import click as click
 import os
 from logbook import Logger, StreamHandler
 import sys
+from hexbytes import HexBytes
 
 from surface.communication.ethereum import utils, Listener
 from surface.communication import ethereum
@@ -104,7 +105,9 @@ def handle_task(w3, worker, task, core_socket, args):
         #TODO: change IV
         iv='922a49d269f31ce6b8fe1e977550151a'
     )
-
+    print(sig)
+    sig = HexBytes(b'0x'+sig)
+    print(sig)
     print(results)
     # results are a just list of addresses.
     # sign is only on ''.join(results)
@@ -113,15 +116,15 @@ def handle_task(w3, worker, task, core_socket, args):
     results_dict = {
         'secret_contract': task['callingContract'],
         'task_id': task['taskId'],
-        'data': results.decode(),
-        'sig': sig.hex(),
+        'data': b'0x' + results,
+        'sig': HexBytes(b'0x'+sig),
     }
     print(results_dict)
     worker.commit_results(
         secret_contract=results_dict['secret_contract'],
         task_id=results_dict['task_id'],
         data=results_dict['data'],
-        sig=results_dict['sig'],
+        sig=sig,
     )
 
 

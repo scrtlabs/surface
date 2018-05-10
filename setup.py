@@ -18,6 +18,6 @@ setup(
     license='',
     author='',
     author_email='',
-    install_requires=['click', 'logbook', 'zmq', 'web3'],
-    test_require=['pytest'],
+    # install_requires=['click', 'logbook', 'zmq', 'web3'],
+    # test_require=['pytest'],
 )

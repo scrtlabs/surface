@@ -9,7 +9,8 @@ from surface.communication.core import Worker
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data
 from tests.fixtures import w3, account, contract, custodian_key, \
-    secret_contract, worker, token_contract, workers_data
+    secret_contract, worker, token_contract, workers_data, config
+from tests.utils import sign_data
 
 
 @pytest.mark.order1
@@ -61,7 +62,7 @@ def task(w3, request, secret_contract, worker, contract):
     :return:
     """
     tx = worker.trigger_compute_task(
-        secret_contract=secret_contract,
+        secret_contract=secret_contract.address,
         callable=request.param['callable'],
         args=request.param['args'],
         callback=request.param['callback'],
@@ -73,7 +74,7 @@ def task(w3, request, secret_contract, worker, contract):
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
 
-    task = worker.get_task(secret_contract, event['args']['taskId'])
+    task = worker.get_task(secret_contract.address, event['args']['taskId'])
     assert len(task) > 0
 
     yield event['args']
@@ -126,22 +127,6 @@ def results(request):
     return request.param
 
 
-def sign_data(w3, encoded_args, callback, results, bytecode, priv):
-    """
-    Sign data for onchain verification.
-
-    :return:
-    """
-    data = Worker.encode_call(callback, results).encode('utf-8')
-    hash = sha3(encoded_args + data + bytecode)
-
-    sig = w3.eth.account.signHash(
-        defunct_hash_message(primitive=hash),
-        private_key=priv,
-    )
-    return data, sig
-
-
 def test_commit_results(w3, task, worker, secret_contract, contract, results,
                         workers_data):
     """
@@ -160,7 +145,7 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
     """
     # Code from here an below normally belong to Core
     bytecode = contract.web3.eth.getCode(
-        contract.web3.toChecksumAddress(secret_contract)
+        contract.web3.toChecksumAddress(secret_contract.address)
     )
     worker_data = next(
         (w for w in workers_data if w['url'] == worker._url),
@@ -181,9 +166,8 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
 
     # Code from here and below belongs to Surface
     tx = worker.commit_results(
-        secret_contract, task.taskId, data, sig['signature']
+        secret_contract.address, task.taskId, data, sig['signature']
     )
     w3.eth.waitForTransactionReceipt(tx)
     event = event_data(contract, tx, 'CommitResults')
     assert event.args._success
-

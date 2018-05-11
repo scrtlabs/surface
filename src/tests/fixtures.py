@@ -9,23 +9,21 @@ from surface.communication.core import Worker
 import surface
 
 PACKAGE_PATH = os.path.dirname(surface.__file__)
-CONFIG_PATH = os.path.join(PACKAGE_PATH, 'config.json')
-
-with open(CONFIG_PATH) as conf:
-    # TODO: add a user config file in ~/.enigma
-    CONFIG = json.load(conf)
-
-DATADIR = os.path.expanduser(CONFIG['DATADIR'])
-CONTRACT_PATH = os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
-TOKEN_PATH = os.path.join(PACKAGE_PATH, CONFIG['TOKEN_PATH'])
-
-
-# TODO: consider reading an environment variable so we can override the default if needed
 
 
 @pytest.fixture
-def w3():
-    w3 = Web3(HTTPProvider(CONFIG['PROVIDER_URL']))
+def config(request):
+    testdir = os.path.dirname(request.module.__file__)
+    config_path = os.path.join(testdir, 'data', 'config.json')
+    with open(config_path) as conf:
+        config = json.load(conf)
+
+    return config
+
+
+@pytest.fixture
+def w3(config):
+    w3 = Web3(HTTPProvider(config['PROVIDER_URL']))
     w3.eth.enable_unaudited_features()
     return w3
 
@@ -44,15 +42,20 @@ def account(w3, request):
 
 
 @pytest.fixture
-def token_contract(w3, monkeypatch):
-    # monkeypatch.setattr('getpass.getpass', lambda x: '')
-    return load_contract(w3, TOKEN_PATH)
+def token_contract(w3, config):
+    return load_contract(w3, os.path.join(PACKAGE_PATH, config['TOKEN_PATH']))
 
 
 @pytest.fixture
-def contract(w3, monkeypatch):
-    # monkeypatch.setattr('getpass.getpass', lambda x: '')
-    return load_contract(w3, CONTRACT_PATH)
+def secret_contract(w3, config):
+    return load_contract(w3, os.path.join(PACKAGE_PATH, config['TOKEN_PATH']))
+
+
+@pytest.fixture
+def contract(w3, config):
+    return load_contract(
+        w3, os.path.join(PACKAGE_PATH, config['CONTRACT_PATH'])
+    )
 
 
 @pytest.fixture
@@ -65,9 +68,9 @@ def custodian_key(request):
 
 
 @pytest.fixture
-def secret_contract(w3):
-    return w3.toChecksumAddress(
-        '0x8f0483125fcb9aaaefa9209d8e9d7b9c8b9fb90f'
+def secret_contract(w3, config):
+    return load_contract(
+        w3, os.path.join(PACKAGE_PATH, config['COIN_MIXER_PATH'])
     )
 
 

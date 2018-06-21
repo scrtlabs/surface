@@ -148,7 +148,7 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
         contract.web3.toChecksumAddress(secret_contract.address)
     )
     worker_data = next(
-        (w for w in workers_data if w['url'] == worker._url),
+        (w for w in workers_data if w['quote'] == worker.quote),
         None
     )
     priv_bytes = bytearray.fromhex(worker_data['signing_priv_key'])

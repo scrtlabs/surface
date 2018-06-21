@@ -94,7 +94,6 @@ def worker(contract, account, workers_data, token_contract):
             account=account,
             contract=contract,
             token=token_contract,
-            url=worker_data['url'],
             ecdsa_pubkey=pub,
             quote=worker_data['quote'],
         )

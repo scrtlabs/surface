@@ -11,19 +11,17 @@ log = Logger('Worker')
 
 class Worker:
     def __init__(self, account, contract, token, ecdsa_pubkey,
-                 url='', quote: Quote = ''):
+                 quote: Quote = ''):
         """
         The worker is in charge of managing the tasks and talking to core.
         :param account:
         :param contract:
-        :param url:
         :param sig_key:
         :param quote:
         """
         self.account = account
         self.contract = contract
         self.token = token
-        self._url = url
         self._ecdsa_pubkey = ecdsa_pubkey
 
         self._quote = quote
@@ -71,9 +69,6 @@ class Worker:
         )
         return address
 
-    @property
-    def url(self):
-        return self._url.encode('utf-8')
 
     def register(self):
         """
@@ -82,12 +77,22 @@ class Worker:
         :return:
         """
         log.info('registering account: {}'.format(self.account))
-        log.info('Acoounts, Signing key: {}'.format(self.signer))
+        self.verify_quote()
+
+        log.info('Acounts, Signing key: {}'.format(self.signer))
         tx = self.contract.functions.register(
-            self.url, self.signer, self.quote
+            self.signer, self.quote
         ).transact({'from': self.account, 'value': 1})
 
         return tx
+
+    def verify_quote(self):
+        """
+        Call the attestation service
+
+        :return:
+        """
+        pass
 
     def info(self):
         """
@@ -188,3 +193,11 @@ class Worker:
         ).transact({'from': self.account})
 
         return tx
+
+    def select_worker(self):
+        """
+        Select the worker for a task
+
+        :return:
+        """
+        pass

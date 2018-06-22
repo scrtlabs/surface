@@ -31,7 +31,7 @@ in the `coin-mixer-poc` project.
     ```
     truffle> compile
     truffle> migrate
-    truffle> test ./test/enigma.js
+    truffle> test ./test/enigma-utils.js
     ```
     The last line in the console should say `8 passing`.  Do not exit the console, open another terminal window
     for the next commands.

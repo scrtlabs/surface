@@ -9,7 +9,7 @@ from rlp import encode
 from surface.communication.core import Worker
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data
-from tests.fixtures import contract, worker, w3, account, secret_contract, \
+from tests.fixtures import contract, worker, w3, account, dapp_contract, \
     token_contract, PACKAGE_PATH, CONFIG
 
 DATADIR = os.path.join(os.path.expanduser('~'), '.enigma')

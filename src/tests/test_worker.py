@@ -9,28 +9,25 @@ from surface.communication.core import Worker
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data
 from tests.fixtures import w3, account, contract, custodian_key, \
-    secret_contract, worker, token_contract, workers_data, config
+    dapp_contract, worker, token_contract, workers_data, config, report
 from tests.utils import sign_data
 
 
-@pytest.mark.order1
-def test_register(w3, worker, contract):
+def test_register(w3, worker, contract, report):
     # This will fail if already registered
     # Redeploy the contract to clear the state
-    tx = worker.register()
+    tx = worker.register(*report)
     w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(contract, tx, 'Register')
     assert event.args._success
 
 
-@pytest.mark.order2
 def test_info(worker):
     info = worker.info()
     assert info
 
 
-@pytest.mark.order3
 @pytest.fixture(
     params=[dict(
         callable='mixAddresses(uint32,address[],uint256)',
@@ -51,33 +48,30 @@ def test_info(worker):
     )
     ]
 )
-def task(w3, request, secret_contract, worker, contract):
+def task(w3, request, dapp_contract, worker, contract):
     """
     Creating a new task for testing.
 
     :param request:
-    :param secret_contract:
+    :param dapp_contract:
     :param worker:
     :param contract:
     :return:
     """
     tx = worker.trigger_compute_task(
-        secret_contract=secret_contract.address,
+        dapp_contract=dapp_contract.address,
         callable=request.param['callable'],
-        args=request.param['args'],
+        callableArgs=request.param['args'],
         callback=request.param['callback'],
         preprocessors=request.param['preprocessors'],
-        fee=request.param['fee']
+        fee=request.param['fee'],
+        block_number=w3.eth.blockNumber,
     )
     w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
-
-    task = worker.get_task(secret_contract.address, event['args']['taskId'])
-    assert len(task) > 0
-
-    yield event['args']
+    return event['args']
 
 
 def test_dynamic_encoding():
@@ -127,7 +121,7 @@ def results(request):
     return request.param
 
 
-def test_commit_results(w3, task, worker, secret_contract, contract, results,
+def test_commit_results(w3, task, worker, dapp_contract, contract, results,
                         workers_data):
     """
     Testing onchain commit and validation.
@@ -137,7 +131,7 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
     :param w3:
     :param task:
     :param worker:
-    :param secret_contract:
+    :param dapp_contract:
     :param contract:
     :param results:
     :param workers_data:
@@ -145,7 +139,7 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
     """
     # Code from here an below normally belong to Core
     bytecode = contract.web3.eth.getCode(
-        contract.web3.toChecksumAddress(secret_contract.address)
+        contract.web3.toChecksumAddress(dapp_contract.address)
     )
     worker_data = next(
         (w for w in workers_data if w['quote'] == worker.quote),
@@ -166,7 +160,7 @@ def test_commit_results(w3, task, worker, secret_contract, contract, results,
 
     # Code from here and below belongs to Surface
     tx = worker.commit_results(
-        secret_contract.address, task.taskId, data, sig['signature']
+        task.taskId, data, sig['signature'], task['blockNumber']
     )
     w3.eth.waitForTransactionReceipt(tx)
     event = event_data(contract, tx, 'CommitResults')

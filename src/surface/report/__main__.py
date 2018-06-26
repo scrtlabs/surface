@@ -1,10 +1,10 @@
-import requests
-import base64
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-import urllib.parse
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
+from surface.report.report_utils import decode_response
+
+import requests
 import cryptography
 import OpenSSL
 import pickle
@@ -20,28 +20,6 @@ PICKLED_RESPONSE = b'\x80\x03crequests.models\nResponse\nq\x00)\x81q\x01}q\x02(X
 
 QOUTE = "AgAAANoKAAAHAAYAAAAAABYB+Vw5ueowf+qruQGtw+72HPtcKCz63mlimVbjqbE5BAT/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAKXBP5WZBuLjmngKZ8zzQ2A00leTJBcp9oYT2CDXSNHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACD1xnnferKFHD2uvYqTXdDA8iZ22kCD5xw7h38CMfOngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8G0ljp2XaOXVtOPvA5tngv93F4PXnPFqA6ZnYt5BGhhPYTqeilJHAoMpungy+sJPzQDOLm3hiqQ34tUBCfn2pqAIAACCRKNGZN2ZUUY22tjhHxxgvFYiPPDCVBxYk5IWlV+4PpTvDYca8SfCiYD4Kua3A2it1Hiq3hdPtctCfKWda/wAX8S59cqYFxIoqnJnS/hMcYfFV3vAUoHgnZIYCkA/T7bAYbjTIRlyO3lmeOU09nx0s2koakT5HevmacWOUeJj+ZEbkPbR766mqULdS4FTC3ZwWZeu13ia2/0oPnUzAraNP7DJMIVOyy+ge5G9N1W7FkZu1jVuBQOLcypZEhr951lbHdEYoYeoL3uXLGquC5pS8c8MJ86CZIFjStUcw0iE/N8QZBd9JJ5rEAcxlbfySoSGQEJeeVtPOj4GavFyR7DytVyBzqlEUZ8g5JsUW84nOqZ7ZlGZckNtZ5HZoFkI0mSO74+e57UHg1TG76GgBAABklbQGvktq8pI3wZC38hw6TVjH+yqwgi3YGw5dUSMo/NBHMcK/uPraR/0ipsA0WLgoRyGVTdDmUJagCqYbrgBtwm8Tz84ul4FXMb/JKG2O+djr9DTcRuIWRqFqWbRVQKvgGwdkGXDDYGmPpRWGqYXmAFNTUQgp5m/ZDdryjGTboIiQt/J6/4aNNZki98EgpHjmLXKwj4hCZSlbQbVz78w4XP9Faj3JEBTLz15w/jLy+UkAjHu3yn6B9za4/ypdDeY1Kv4MfN+/zIOLXRwr7ta7XYhBF4r0lxvwfXaPo7rkV/letzO4R97FrQvlPfqBgrlxdhLkwIbJNXl5CWPGpKQDTFva/+MQjK3EgdHqkbODO7WSy0P48L7gUGRv9ZjwkcpW41PeEQmt7neJYrtDd2BeY2TFnDDTnx+VP7Mg2iBZPrBiSj0WcjK9bltPm7VeHNTyw2g8q5PVxV1jDZlLS2vmCo/tL08h3vcNShrfzHm32r4JXAXERxeC"
 
-
-def decode_response(res):
-    # the report is the body of the response
-    report = res.text.encode('utf-8')
-
-    # Parse the signature from the header
-    sig = res.headers['x-iasreport-signature']
-
-    # Decode it from base64
-    sig = base64.b64decode(sig)
-
-    # Parse the certs from the header.
-    intelcerts = urllib.parse.unquote(res.headers['x-iasreport-signing-certificate'])
-    # split into a list of 2 chained certificates.
-    intelcerts = intelcerts.split('-----END CERTIFICATE-----')
-    # The first one is the one that signed the report
-    report_cert = intelcerts[0] + '-----END CERTIFICATE-----'
-    # The second one is the CA that signed the first certificate, and it's the one on Intel's website.
-    report_ca = intelcerts[1] + '-----END CERTIFICATE-----'
-    # Remove the "\n" at the start of the sig
-    report_ca = report_ca[1:]
-    return report, sig, report_cert, report_ca
 
 
 def verify_certs(report, sig, report_cert, report_ca):

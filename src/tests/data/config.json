@@ -1,8 +1,8 @@
 {
   "PROVIDER_URL": "http://localhost:9545",
-  "CONTRACT_PATH": "../../../coin-mixer-poc/dapp/build/contracts/Enigma.json",
-  "TOKEN_PATH": "../../../coin-mixer-poc/dapp/build/contracts/EnigmaToken.json",
-  "COIN_MIXER_PATH": "../../../coin-mixer-poc/dapp/build/contracts/CoinMixer.json",
+  "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
+  "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
+  "COIN_MIXER_PATH": "../../../enigma-contract/build/contracts/CoinMixer.json",
   "DATADIR": "~/.enigma",
   "SIGN_KEY": "../../../core/src/core/core_priv_key.pem",
   "SIGN_PUB_KEY": "../../../core/src/core/core_pub_key.pem",

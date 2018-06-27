@@ -38,6 +38,9 @@ class Quote(object):
                 data = base64.b64decode(
                     response_report['report']['isvEnclaveQuoteBody'])
                 self._build_quote(data)
+                object.__setattr__(self, 'report', response_report['report'])
+                object.__setattr__(self, 'sig', response_report['signature'])
+                object.__setattr__(self, 'cert', response_report['certificate'])
 
     def _build_quote(self, quote_bytes):
         object.__setattr__(self, 'quote_bytes', quote_bytes)

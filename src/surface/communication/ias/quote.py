@@ -2,6 +2,7 @@ import base64
 import binascii
 import OpenSSL
 import json
+import requests
 
 
 class Quote(object):
@@ -10,10 +11,11 @@ class Quote(object):
         """
         Gets a decoded verified quote or a report + signatures and certificates.
         Assuming the Enigma Node returns the quote as a json like the following:
-        { Report: *REPORT_JSON*,
-        report_cert: *PEM string of the signing certificate*,
-        ca_cert: *PEM string of the CA of the signing certificate*,
-        sig: Signature of the whole Report made with the report_cert }
+        { report: *REPORT_JSON*,
+          certificate: *PEM string of the signing certificate*,
+          ca: *PEM string of the CA of the signing certificate*,
+          signature: Signature of the whole Report made with the report_cert,
+          validate: bool: Was the signature validated in the Attestation Service}
         :param quote: either a quote(base64 or bytes), or a full report(json) to be verified with intel.
         :type quote: str / bytes
         :param response_report: a json response from the Enigma node.
@@ -34,12 +36,8 @@ class Quote(object):
         else:
             if self.verify_report(response_report):
                 data = base64.b64decode(
-                    response_report['Report']['isvEnclaveQuoteBody'])
-                test = data.hex()
-                test2 = binascii.hexlify(data)
-                self._build_quote(test)
-                public_key = '0x' + self.report_body.report_data
-                pass
+                    response_report['report']['isvEnclaveQuoteBody'])
+                self._build_quote(data)
 
     def _build_quote(self, quote_bytes):
         object.__setattr__(self, 'quote_bytes', quote_bytes)
@@ -49,11 +47,39 @@ class Quote(object):
         object.__setattr__(self, 'signature', quote_bytes[436:])
 
     @classmethod
+    def from_enigma_proxy(cls, encrypted_quote, server='http://127.0.0.1:5000/api'):
+        body = {
+            'jsonrpc': '2.0',
+            'method': 'validate',
+            'params': {
+                'quote': encrypted_quote
+            },
+            'id': '1'
+        }
+        try:
+            response = requests.post(server, json=body)
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError("Couldn't connect to the server: ", server)
+        if response.status_code != 200:
+            raise ValueError("Couldn't verify the quote, HTTP code: ", response.status_code)
+
+        result = response.json()['result']
+        if result['validate'] != 'True':
+            raise ValueError("The server failed to verify Intel's signature")
+
+        result['report'] = json.loads(result['report'])
+
+        if not cls.verify_report(result):
+            raise ValueError("Falied self verifying Intel's signature")
+
+        return cls(response_report=result)
+
+    @classmethod
     def verify_report(cls, response_report):
         report_cert = OpenSSL.crypto.load_certificate(
-            OpenSSL.crypto.FILETYPE_PEM, response_report['report_cert'])
+            OpenSSL.crypto.FILETYPE_PEM, response_report['certificate'].encode('ascii'))
         ca_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM,
-                                                  response_report['ca_cert'])
+                                                  response_report['ca'])
         trusted_store = OpenSSL.crypto.X509Store()
         trusted_store.add_cert(ca_cert)
         store_context = OpenSSL.crypto.X509StoreContext(trusted_store,
@@ -62,11 +88,19 @@ class Quote(object):
             store_context.verify_certificate()
         except OpenSSL.crypto.X509StoreContextError:
             return False
+        # Check if signature is bytes or hex(hex from the enigma server)
         try:
-            OpenSSL.crypto.verify(report_cert, response_report['sig'],
-                                  json.dumps(response_report['Report'],
-                                             separators=(',', ':')).encode(
-                                      'utf-8'),
+            sig = binascii.unhexlify(response_report['signature'])
+        except binascii.Error:
+            if len(response_report['signature']) == 256:
+                sig = response_report['signature']
+            else:
+                raise ValueError("The Signature is invalid: ", response_report['signature'])
+        try:
+            OpenSSL.crypto.verify(report_cert, sig,
+                                  json.dumps(
+                                      response_report['report'],
+                                      separators=(',', ':')).encode('utf-8'),
                                   'sha256')
         except OpenSSL.crypto.Error:
             return False

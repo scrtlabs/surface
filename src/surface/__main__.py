@@ -88,8 +88,8 @@ def handle_task(w3, worker, task, core_socket, args):
     log.info('the bytecode: {}'.format(bytecode))
 
     # The arguments are now RLP encoded
-    # args = worker.encode_call(task['callable'], task['callableArgs'])
-    # args = Listener.parse_args(task['callable'], task['callableArgs'])
+    # args = worker.encode_call(task['callable'], task['callable_args'])
+    # args = Listener.parse_args(task['callable'], task['callable_args'])
     # log.info('the callable functin arguments: {}'.format(args))
 
     # TODO: what happens if this worker rejects a task?
@@ -99,7 +99,7 @@ def handle_task(w3, worker, task, core_socket, args):
         # TODO: Check if arguments are right.
         # TODO: Discuss where the IV comes from
         function=task['callable'],
-        callableArgs=task['callableArgs'].hex(),
+        callable_args=task['callable_args'].hex(),
         preprocessors=task['preprocessors'],
         callback=task['callback'],
         #TODO: change IV

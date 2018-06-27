@@ -131,7 +131,7 @@ def test_compare_sig(w3, task, secret_contract, core_socket, sign_priv):
         # TODO: Check if arguments are right.
         # TODO: Discuss where the IV comes from
         function=task['callable'],
-        callableArgs=encodedArgs.hex(),
+        callable_args=encodedArgs.hex(),
         preprocessors=task['preprocessors'],
         callback=task['callback'],
         # TODO: change IV

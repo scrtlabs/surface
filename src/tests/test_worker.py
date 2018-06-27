@@ -87,7 +87,7 @@ def task(w3, request, dapp_contract, worker, contract):
     tx = worker.trigger_compute_task(
         dapp_contract=dapp_contract.address,
         callable=request.param['callable'],
-        callableArgs=request.param['args'],
+        callable_args=request.param['args'],
         callback=request.param['callback'],
         preprocessors=request.param['preprocessors'],
         fee=request.param['fee'],
@@ -174,12 +174,12 @@ def test_commit_results(w3, task, worker, dapp_contract, contract, results,
         contract.web3.toChecksumAddress(dapp_contract.address)
     )
     data = Worker.encode_call(task['callback'], results).encode('utf-8')
-    hash = sha3(task['callableArgs'] + data + bytecode)
+    hash = sha3(task['callable_args'] + data + bytecode)
     # hash = Web3.soliditySha3(
     #     ['string', 'string', 'string'],
-    #     [callableArgs, data, code]
+    #     [callable_args, data, code]
     # )
-    # hash1 = sha3(task['callableArgs'] + data + bytecode)
+    # hash1 = sha3(task['callable_args'] + data + bytecode)
 
     priv = get_private_key(worker, workers_data)
     priv_bytes = bytes.fromhex(priv)
@@ -206,7 +206,7 @@ def test_commit_results(w3, task, worker, dapp_contract, contract, results,
 #     """
 #     taskId = Web3.soliditySha3(
 #         ['address', 'string', 'bytes', 'uint256'],
-#         [contract.address, task['callable'], task['callableArgs'],
+#         [contract.address, task['callable'], task['callable_args'],
 #          task['blockNumber']
 #          ]
 #     ).hex()

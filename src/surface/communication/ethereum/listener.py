@@ -52,7 +52,7 @@ class Listener:
         log.info('got new task: {}'.format(task))
         # TODO: what happens if this worker rejects a task?
         # TODO: how does the worker know if he is selected to perform the task?
-        args = self.parse_args(task['callable'], task['callableArgs'])
+        args = self.parse_args(task['callable'], task['callable_args'])
         return task, args
 
     def watch(self):
@@ -75,7 +75,7 @@ class Listener:
                         if event.address == self.contract.address:
                             task = event['args']
                             args = self.parse_args(
-                                task['callable'], task['callableArgs']
+                                task['callable'], task['callable_args']
                             )
                             yield task, args
 
@@ -88,7 +88,7 @@ class Listener:
         """
         Watch the Enigma contract's state.
         Yields when there's a new task for the worker.
-        :return: The task together with the [callableArgs] parsed into a dict
+        :return: The task together with the [callable_args] parsed into a dict
         :rtype: (dict, dict)
         """
         log.info('watching Enigma contract: {}'.format(self.contract.address))
@@ -100,14 +100,14 @@ class Listener:
         tasks = task_filter.get_all_entries()
         log.info('got {} tasks'.format(len(tasks)))
         for task in tasks:
-            args = self.parse_args(task['callable'], task['callableArgs'])
+            args = self.parse_args(task['callable'], task['callable_args'])
             yield task, args
 
         while True:
             log.info('fetching new tasks')
             for task in task_filter.get_new_entries():
                 log.info('got new task: {}'.format(task))
-                args = self.parse_args(task['callable'], task['callableArgs'])
+                args = self.parse_args(task['callable'], task['callable_args'])
                 yield task, args
 
             sleep(self.POLLING_INTERVAL)

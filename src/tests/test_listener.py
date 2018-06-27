@@ -55,7 +55,7 @@ def test_handle_task(w3, worker, args, secret_contract):
         callingContract=secret_contract,
         taskId=0,
         callable='mixAddresses(uint32,address[],uint)',
-        callableArgs=args,
+        callable_args=args,
         callback='distribute(uint32,address[])',
         fee=1,
         preprocessors=preprocessors,

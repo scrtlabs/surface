@@ -82,7 +82,7 @@ class Worker:
 
         return worker
 
-    def trigger_compute_task(self, dapp_contract, callable, callableArgs,
+    def trigger_compute_task(self, dapp_contract, callable, callable_args,
                              callback,
                              preprocessors, fee, block_number):
         """
@@ -90,7 +90,7 @@ class Worker:
 
         :param dapp_contract:
         :param callable:
-        :param callableArgs:
+        :param callable_args:
         :param callback:
         :param preprocessors:
         :param fee:
@@ -119,7 +119,7 @@ class Worker:
         if allowance < fee:
             raise ValueError('Could not approve enough ENG to cover fee.')
 
-        msg = rlp.encode(callableArgs)
+        msg = rlp.encode(callable_args)
         tx = self.contract.functions.compute(
             dapp_contract, callable, msg, callback, fee, preprocessors,
             block_number

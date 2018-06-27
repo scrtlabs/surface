@@ -7,6 +7,7 @@ from tests.fixtures import w3, account, contract, custodian_key, \
     dapp_contract, worker, token_contract, workers_data, config, report
 import pytest
 from surface.communication.ethereum.utils import event_data
+import sha3
 
 core_socket = core.IPC(5552)
 
@@ -53,10 +54,10 @@ def test_t(w3, contract, account, token_contract, dapp_contract):
     w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(contract, tx, 'ComputeTask')
-    print(event)
-
     bytecode = contract.web3.eth.getCode(
         contract.web3.toChecksumAddress(dapp_contract.address))
+
+
     sig, result = core_socket.exec_evm(
         bytecode=bytecode.hex(),
         callable=event.args.callable,
@@ -67,11 +68,18 @@ def test_t(w3, contract, account, token_contract, dapp_contract):
     print("sig: ", sig)
     print("result: ", result)
 
+    k_hash = sha3.keccak_256()
+    k_hash.update(event.args.callableArgs)
+    k_hash.update(bytes.fromhex(result))
+    k_hash.update(bytecode)
+    print('Combined hash: ', k_hash.hexdigest())
+
     tx = worker.commit_results(
         event.args.taskId, result, sig, event.blockNumber)
     w3.eth.waitForTransactionReceipt(tx)
     event = event_data(contract, tx, 'CommitResults')
     print(event)
+    assert event['args']['_success']
 
 
 

@@ -16,6 +16,16 @@ def test_exec_evm():
     callable = "mixAddresses(uint32,address[],uint)"
     callback = "distribute(uint,address[])"
     preprocessor = "rand"
+    core_socket.connect()
+    sig, result = core_socket.exec_evm(
+        bytecode=bytecode,
+        callable=callable,
+        callable_args=callable_args,
+        callback=callback,
+        preprocessors=preprocessor
+    )
+    print("Sig: ", sig)
+    print("Result: ", result)
 
 
 @pytest.mark.skip(reason="Core needs to be alive for this")

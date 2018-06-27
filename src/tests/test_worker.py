@@ -12,8 +12,7 @@ from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data
 from tests.fixtures import w3, account, contract, custodian_key, \
     dapp_contract, worker, token_contract, workers_data, config, report
-from tests.utils import sign_data, get_private_key
-from eth_keys import keys
+from tests.utils import get_private_key
 
 
 def test_register(w3, worker, contract, report):
@@ -24,7 +23,7 @@ def test_register(w3, worker, contract, report):
     w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(contract, tx, 'Register')
-    assert event.args._success
+    assert event['args']['_success']
 
 
 def test_info(worker):
@@ -35,23 +34,23 @@ def test_info(worker):
 def test_set_worker_params(w3, worker, workers_data):
     seed = randint(1, 1000000)
 
-    hash = Web3.soliditySha3(['uint256'], [seed])
+    hash = Web3.soliditySha3(
+        abi_types=['uint256'],
+        values=[seed],
+    )
     priv = get_private_key(worker, workers_data)
     priv_bytes = bytes.fromhex(priv)
 
-    pk = keys.PrivateKey(priv_bytes)
-    sig = pk.sign_msg(hash)
-
-    assert sig.recover_public_key_from_msg(hash) == pk.public_key
+    sig = w3.eth.account.signHash(hash, private_key=priv_bytes)
 
     tx = worker.contract.functions.setWorkersParams(
-        seed, sig.to_hex()
+        seed, sig['signature']
     ).transact({'from': worker.account})
 
     w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(worker.contract, tx, 'WorkersParameterized')
-    assert event.args._success
+    assert event['args']['_success']
 
 
 @pytest.fixture(
@@ -78,11 +77,8 @@ def task(w3, request, dapp_contract, worker, contract):
     """
     Creating a new task for testing.
 
-    :param request:
-    :param dapp_contract:
-    :param worker:
-    :param contract:
-    :return:
+    This fixture reliably emulates the `task` object emitted by the listener
+
     """
     tx = worker.trigger_compute_task(
         dapp_contract=dapp_contract.address,
@@ -96,39 +92,17 @@ def task(w3, request, dapp_contract, worker, contract):
     w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(contract, tx, 'ComputeTask')
-    assert event.args._success
+    assert event['args']['_success']
 
     yield event['args']
 
 
-def test_dynamic_encoding():
-    """
-    Validating encoding logic against the last example documented here:
-     https://solidity.readthedocs.io/en/develop/abi-spec.html
-
-    :return:
-    """
-    f_def = 'f(uint256,uint32[],bytes10,bytes)'
-    args = [0x123, [0x456, 0x789], b'1234567890', b'Hello, world!']
-    function_hash = Worker.encode_call(f_def, args)
-    ref = (
-        '0x8be65246'
-        '0000000000000000000000000000000000000000000000000000000000000123'
-        '0000000000000000000000000000000000000000000000000000000000000080'
-        '3132333435363738393000000000000000000000000000000000000000000000'
-        '00000000000000000000000000000000000000000000000000000000000000e0'
-        '0000000000000000000000000000000000000000000000000000000000000002'
-        '0000000000000000000000000000000000000000000000000000000000000456'
-        '0000000000000000000000000000000000000000000000000000000000000789'
-        '000000000000000000000000000000000000000000000000000000000000000d'
-        '48656c6c6f2c20776f726c642100000000000000000000000000000000000000'
-    )
-    assert True
-    assert function_hash == ref
-
-
-def test_find_selected_worker(w3, worker, task):
-    worker.find_selected_worker(task['blockNumber'])
+def test_find_selected_worker(worker, contract, task):
+    selected_worker = worker.find_selected_worker(task)
+    contract_selected_worker = contract.functions.selectWorker(
+        task['blockNumber'], task['taskId']
+    ).call()
+    assert selected_worker == contract_selected_worker
 
 
 @pytest.fixture(
@@ -152,63 +126,30 @@ def results(request):
     return request.param
 
 
-@pytest.mark.skip(reason="something about the hash does not match Solidity")
+# @pytest.mark.skip(
+#     reason="something about the signature does not match Solidity")
 def test_commit_results(w3, task, worker, dapp_contract, contract, results,
                         workers_data):
-    """
-    Testing onchain commit and validation.
-
-    The first part mocks things which are happening in Core.
-
-    :param w3:
-    :param task:
-    :param worker:
-    :param dapp_contract:
-    :param contract:
-    :param results:
-    :param workers_data:
-    :return:
-    """
     # Code from here an below normally belong to Core
     bytecode = contract.web3.eth.getCode(
         contract.web3.toChecksumAddress(dapp_contract.address)
     )
-    data = Worker.encode_call(task['callback'], results).encode('utf-8')
-    hash = sha3(task['callable_args'] + data + bytecode)
-    # hash = Web3.soliditySha3(
-    #     ['string', 'string', 'string'],
-    #     [callable_args, data, code]
-    # )
-    # hash1 = sha3(task['callable_args'] + data + bytecode)
+    data = Worker.encode_call(task['callback'], results)
+    callableArgs = task['callableArgs']
+    hash = Web3.soliditySha3(
+        abi_types=['bytes', 'bytes', 'bytes'],
+        values=[callableArgs, data, bytecode]
+    )
 
     priv = get_private_key(worker, workers_data)
     priv_bytes = bytes.fromhex(priv)
 
-    pk = keys.PrivateKey(priv_bytes)
-    sig = pk.sign_msg(hash)
-
-    assert sig.recover_public_key_from_msg(hash) == pk.public_key
+    sig = w3.eth.account.signHash(hash, private_key=priv_bytes)
 
     # Code from here and below belongs to Surface
     tx = worker.commit_results(
-        task.taskId, data, sig.to_hex(), task['blockNumber']
+        task.taskId, data, sig['signature'], task['blockNumber']
     )
     w3.eth.waitForTransactionReceipt(tx)
     event = event_data(contract, tx, 'CommitResults')
-    assert event.args._success
-
-
-# def test_find_select_worker(worker, task, contract):
-#     """
-#     Check if worker is selected
-#
-#     :return:
-#     """
-#     taskId = Web3.soliditySha3(
-#         ['address', 'string', 'bytes', 'uint256'],
-#         [contract.address, task['callable'], task['callable_args'],
-#          task['blockNumber']
-#          ]
-#     ).hex()
-#     taskId2 = task['taskId'].hex()
-#     pass
+    assert event['args']['_success']

@@ -24,11 +24,10 @@ def test_exec_evm():
         callback=callback,
         preprocessors=preprocessor
     )
-    print("Sig: ", sig)
-    print("Result: ", result)
+    assert len(bytes.fromhex(sig)) == 64
 
 
-@pytest.mark.skip(reason="Core needs to be alive for this")
+# @pytest.mark.skip(reason="Core needs to be alive for this")
 def test_register():
     core_socket.connect()
     results_json = core_socket.get_report()
@@ -47,7 +46,6 @@ def test_register():
 #     callable = "mixAddresses(uint,address[],uint)"
 #     callback = "distribute(uint32,address[])"
 #     preprocessor = ['rand()'.encode()]
-# >>>>>>> 7fa9ce701dd694d7cc23b6446a79612c314f58af
 #     core_socket.connect()
 #     sig, result = core_socket.exec_evm(
 #         bytecode=bytecode,

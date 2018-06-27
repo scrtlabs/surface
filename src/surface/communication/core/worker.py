@@ -63,7 +63,6 @@ class Worker:
 
         :return:
         """
-
         hashed = sha3(self.ecdsa_pubkey).hex()
         address = self.contract.web3.toChecksumAddress(
             '0x{}'.format(hashed[24:])
@@ -170,10 +169,13 @@ class Worker:
 
         return tx
 
-    def select_worker(self):
+    def find_selected_worker(self, block_number):
         """
         Select the worker for a task
 
         :return:
         """
+        params = self.contract.functions.getWorkersParams(
+            block_number
+        ).call({'from': self.account})
         pass

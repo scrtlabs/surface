@@ -3,6 +3,7 @@ import sys
 from ecdsa import SigningKey, SECP256k1
 from eth_account.messages import defunct_hash_message
 from ethereum.utils import sha3
+from random import randint
 from web3 import Web3
 
 from surface.communication.core import Worker
@@ -10,12 +11,13 @@ from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data
 from tests.fixtures import w3, account, contract, custodian_key, \
     dapp_contract, worker, token_contract, workers_data, config, report
-from tests.utils import sign_data
+from tests.utils import sign_data, get_private_key
 
 
 def test_register(w3, worker, contract, report):
     # This will fail if already registered
     # Redeploy the contract to clear the state
+
     tx = worker.register(*report)
     w3.eth.waitForTransactionReceipt(tx)
 
@@ -26,6 +28,25 @@ def test_register(w3, worker, contract, report):
 def test_info(worker):
     info = worker.info()
     assert info
+
+
+def test_set_worker_params(w3, worker, workers_data):
+    seed = randint(1, 1000000)
+
+    hash = Web3.soliditySha3(['uint256'], [seed])
+    priv = get_private_key(worker, workers_data)
+    sig = w3.eth.account.signHash(
+        defunct_hash_message(primitive=hash),
+        private_key=priv,
+    )
+    tx = worker.contract.functions.setWorkersParams(
+        seed, sig['signature']
+    ).transact({'from': worker.account})
+
+    w3.eth.waitForTransactionReceipt(tx)
+
+    event = event_data(contract, tx, 'WorkersParameterized')
+    assert event.args._success
 
 
 @pytest.fixture(
@@ -98,6 +119,10 @@ def test_dynamic_encoding():
     )
     assert True
     assert function_hash == ref
+
+
+def test_find_selected_worker(w3, worker, task):
+    worker.find_selected_worker(task['blockNumber'])
 
 
 @pytest.fixture(

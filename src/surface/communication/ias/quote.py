@@ -33,7 +33,13 @@ class Quote(object):
 
         else:
             if self.verify_report(response_report):
-                self._build_quote(response_report['Report']['isvEnclaveQuoteBody'])
+                data = base64.b64decode(
+                    response_report['Report']['isvEnclaveQuoteBody'])
+                test = data.hex()
+                test2 = binascii.hexlify(data)
+                self._build_quote(test)
+                public_key = '0x' + self.report_body.report_data
+                pass
 
     def _build_quote(self, quote_bytes):
         object.__setattr__(self, 'quote_bytes', quote_bytes)
@@ -44,31 +50,36 @@ class Quote(object):
 
     @classmethod
     def verify_report(cls, response_report):
-        report_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, response_report['report_cert'])
-        ca_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, response_report['ca_cert'])
+        report_cert = OpenSSL.crypto.load_certificate(
+            OpenSSL.crypto.FILETYPE_PEM, response_report['report_cert'])
+        ca_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM,
+                                                  response_report['ca_cert'])
         trusted_store = OpenSSL.crypto.X509Store()
         trusted_store.add_cert(ca_cert)
-        store_context = OpenSSL.crypto.X509StoreContext(trusted_store, report_cert)
+        store_context = OpenSSL.crypto.X509StoreContext(trusted_store,
+                                                        report_cert)
         try:
             store_context.verify_certificate()
         except OpenSSL.crypto.X509StoreContextError:
             return False
         try:
             OpenSSL.crypto.verify(report_cert, response_report['sig'],
-                                  json.dumps(response_report['Report'], separators=(',', ':')).encode('utf-8'),
+                                  json.dumps(response_report['Report'],
+                                             separators=(',', ':')).encode(
+                                      'utf-8'),
                                   'sha256')
         except OpenSSL.crypto.Error:
             return False
         return True
 
     def __setattr__(self, key, value):
-        raise ImmutableException('This object is immutable, the attributes cannot be changed')
+        raise ImmutableException(
+            'This object is immutable, the attributes cannot be changed')
 
 
 class _Body(object):
 
     def __init__(self, quote_bytes):
-
         object.__setattr__(self, 'version', quote_bytes[0:2])
         object.__setattr__(self, 'signature_type', quote_bytes[2:4])
         object.__setattr__(self, 'gid', quote_bytes[4:8])
@@ -78,13 +89,13 @@ class _Body(object):
         object.__setattr__(self, 'basename', quote_bytes[16:48])
 
     def __setattr__(self, key, value):
-        raise ImmutableException('This object is immutable, the attributes cannot be changed')
+        raise ImmutableException(
+            'This object is immutable, the attributes cannot be changed')
 
 
 class _ReportBody(object):
 
     def __init__(self, quote_bytes):
-
         object.__setattr__(self, 'cpusvn', quote_bytes[48:64])
         object.__setattr__(self, 'misc_select', quote_bytes[64:68])
         object.__setattr__(self, 'reserved', quote_bytes[68:96])
@@ -99,7 +110,8 @@ class _ReportBody(object):
         object.__setattr__(self, 'report_data', quote_bytes[368:432])
 
     def __setattr__(self, key, value):
-        raise ImmutableException('This object is immutable, the attributes cannot be changed')
+        raise ImmutableException(
+            'This object is immutable, the attributes cannot be changed')
 
 
 class ImmutableException(Exception):

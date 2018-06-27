@@ -1,6 +1,7 @@
 from eth_abi import encode_abi
 from logbook import Logger
 from ethereum.utils import sha3
+from web3 import Web3
 
 from surface.communication.ethereum.utils import parse_arg_types, event_data
 from surface.communication.ias import Quote
@@ -29,6 +30,7 @@ class Worker:
 
         self._quote = quote
         self.encoded_report = None
+        self._workers_params = dict()
 
     @property
     def quote(self):
@@ -37,6 +39,27 @@ class Worker:
     @property
     def ecdsa_pubkey(self):
         return self._ecdsa_pubkey.to_hex()
+
+    @property
+    def workers_params(self):
+        """
+        A dictionary from the raw worker parameters
+
+        :return:
+        """
+        params = dict()
+        for block_number in self._workers_params:
+            workers = list(filter(
+                lambda x: x != '0x0000000000000000000000000000000000000000',
+                self._workers_params[block_number][2]
+            ))
+            params[block_number] = dict(
+                first_block=self._workers_params[block_number][0],
+                seed=self._workers_params[block_number][1],
+                workers=workers,
+            )
+
+        return params
 
     @classmethod
     def encode_call(cls, f_def, args):
@@ -54,6 +77,22 @@ class Worker:
         encoded = encode_abi(arg_types, args).hex()
         hash = '{}{}'.format(f_id, encoded)
         return hash
+
+    @classmethod
+    def generate_task_id(cls, task):
+        """
+        Generate a task_id from the task parameters
+
+        :param task:
+        :return:
+        """
+        return Web3.soliditySha3(
+            abi_types=('address', 'string', 'bytes', 'uint256'),
+            values=(
+                task['dappContract'], task['callable'], task['callableArgs'],
+                task['blockNumber']
+            ),
+        )
 
     def register(self, report, report_cert, sig):
         """
@@ -154,13 +193,32 @@ class Worker:
 
         return tx
 
-    def find_selected_worker(self, block_number):
+    def fetch_workers_params(self, block_number):
+        """
+        Get the workers parameters corresponding to the block number
+
+        :param block_number:
+        :return:
+        """
+        # TODO: keep in cache and fetch only when expired
+        self._workers_params[block_number] = \
+            self.contract.functions.getWorkersParams(
+                block_number
+            ).call({'from': self.account})
+
+        return self.workers_params[block_number]
+
+    def find_selected_worker(self, task):
         """
         Select the worker for a task
 
         :return:
         """
-        params = self.contract.functions.getWorkersParams(
-            block_number
-        ).call({'from': self.account})
-        pass
+        task_id = Worker.generate_task_id(task)
+        params = self.fetch_workers_params(task['blockNumber'])
+        hash = Web3.soliditySha3(
+            abi_types=('uint256', 'bytes32'),
+            values=(params['seed'], task_id),
+        )
+        index = Web3.toInt(hash) % len(params['workers'])
+        return params['workers'][index]

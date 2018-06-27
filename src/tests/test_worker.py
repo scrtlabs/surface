@@ -98,9 +98,6 @@ def task(w3, request, dapp_contract, worker, contract):
     event = event_data(contract, tx, 'ComputeTask')
     assert event.args._success
 
-    task = worker.function.tasks(event['args']['taskId'])
-    assert len(task) > 0
-
     yield event['args']
 
 

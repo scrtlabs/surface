@@ -51,7 +51,7 @@ def token_contract(w3, config):
 
 @pytest.fixture
 def dapp_contract(w3, config):
-    return load_contract(w3, os.path.join(PACKAGE_PATH, config['TOKEN_PATH']))
+    return load_contract(w3, os.path.join(PACKAGE_PATH, config['COIN_MIXER_PATH']))
 
 
 @pytest.fixture

@@ -91,7 +91,7 @@ def worker(contract, account, workers_data, token_contract):
     for worker_data in workers_data:
         priv_bytes = bytearray.fromhex(worker_data['signing_priv_key'])
         priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
-        pub = priv.get_verifying_key().to_string().hex()
+        pub = priv.get_verifying_key().to_string()
 
         worker = Worker(
             account=account,

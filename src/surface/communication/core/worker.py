@@ -5,6 +5,7 @@ from ethereum.utils import sha3
 from surface.communication.ethereum.utils import parse_arg_types, event_data
 from surface.communication.ias import Quote
 import rlp
+from eth_keys import keys
 
 log = Logger('Worker')
 
@@ -22,7 +23,9 @@ class Worker:
         self.account = account
         self.contract = contract
         self.token = token
-        self._ecdsa_pubkey = ecdsa_pubkey
+        self._ecdsa_pubkey = keys.PublicKey(ecdsa_pubkey)
+
+        self.signer = self._ecdsa_pubkey.to_checksum_address()
 
         self._quote = quote
         self.encoded_report = None
@@ -33,7 +36,7 @@ class Worker:
 
     @property
     def ecdsa_pubkey(self):
-        return self._ecdsa_pubkey
+        return self._ecdsa_pubkey.to_hex()
 
     @classmethod
     def encode_call(cls, f_def, args):
@@ -52,23 +55,6 @@ class Worker:
         hash = '{}{}'.format(f_id, encoded)
         return hash
 
-    @property
-    def signer(self):
-        """
-        Return the signer address calculated from the priv key.
-        The address is generated just like an Ethereum wallet address to
-        maintain compatibility with Solidity's ECRecovery.
-
-        See ref implementation: https://github.com/vkobel/ethereum-generate-wallet
-
-        :return:
-        """
-        hashed = sha3(self.ecdsa_pubkey).hex()
-        address = self.contract.web3.toChecksumAddress(
-            '0x{}'.format(hashed[24:])
-        )
-        return address
-
     def register(self, report, report_cert, sig):
         """
         Registers the worker with the Enigma contract
@@ -77,10 +63,9 @@ class Worker:
         """
         log.info('registering account: {}'.format(self.account))
 
-        encoded_quote = rlp.encode(self.quote)
         encoded_report = rlp.encode([report, report_cert, sig])
         tx = self.contract.functions.register(
-            self.signer, encoded_quote, encoded_report
+            self.signer, encoded_report
         ).transact({'from': self.account})
 
         return tx

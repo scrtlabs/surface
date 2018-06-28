@@ -12,6 +12,7 @@ log = Logger('Worker')
 
 
 class Worker:
+    # TODO: we should have the report only once, we can remove the quote from init
     def __init__(self, account, contract, token, ecdsa_pubkey,
                  quote: Quote = ''):
         """

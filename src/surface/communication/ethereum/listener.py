@@ -74,10 +74,7 @@ class Listener:
                         event = event_data(self.contract, tx, 'ComputeTask')
                         if event.address == self.contract.address:
                             task = event['args']
-                            args = self.parse_args(
-                                task['callable'], task['callable_args']
-                            )
-                            yield task, args
+                            yield task
 
                     except ValueError:
                         pass

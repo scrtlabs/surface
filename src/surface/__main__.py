@@ -69,12 +69,12 @@ def start(datadir, provider):
     # TODO: consider spawning threads/async
     listener = ethereum.Listener(eng_contract)
     log.info('Listenning for new tasks')
-    for task, args in listener.watch():
+    for task in listener.watch():
         # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
-        handle_task(w3, worker, task, core_socket, args)
+        handle_task(w3, worker, task, core_socket)
 
 
-def handle_task(w3, worker, task, core_socket, args):
+def handle_task(w3, worker, task, core_socket):
     log.debug('The task:', task)
     # TODO: this is hard to unit test
     # I think that we should allow a mock core with the same properties of core

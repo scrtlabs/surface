@@ -167,7 +167,7 @@ class Worker:
 
         return tx
 
-    def commit_results(self, secret_contract, task_id, data, sig):
+    def commit_results(self, task_id, data, sig, block_number):
         """
         Commiting the computation results onchain.
 
@@ -178,18 +178,15 @@ class Worker:
         :return:
         """
         output = dict(
-            secret_contract=secret_contract,
-            task_id=task_id,
+            block_number=block_number,
+            task_id=task_id.hex(),
             data=data,
-            sig=sig
+            sig=sig,
+            contract_address=self.contract.address
         )
-        log.info(
-            'committing results for task: {}'.format(
-                output
-            )
-        )
+        log.info('committing results for task: {}'.format(output))
         tx = self.contract.functions.commitResults(
-            secret_contract, task_id, data, sig
+            task_id, data, sig, block_number
         ).transact({'from': self.account})
 
         return tx

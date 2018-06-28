@@ -1,5 +1,5 @@
 {
-  "PROVIDER_URL": "http://localhost:9545",
+  "PROVIDER_URL": "http://localhost:8545",
   "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
   "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
   "DATADIR": "~/.enigma",

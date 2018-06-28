@@ -16,7 +16,7 @@ from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data, unlock_wallet, \
     load_contract
 from tests.fixtures import contract, w3, account, dapp_contract, \
-    token_contract, config
+    token_contract, config, secret_contract
 from tests.utils import sign_data
 import surface
 

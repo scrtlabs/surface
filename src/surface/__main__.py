@@ -7,8 +7,7 @@ import sys
 from hexbytes import HexBytes
 
 from surface.communication.ethereum import utils, Listener
-from surface.communication import ethereum
-from surface.communication import core
+from surface.communication import ethereum, core, ias
 import surface
 
 StreamHandler(sys.stdout).push_application()
@@ -38,14 +37,13 @@ def start(datadir, provider):
     log.info('Starting up {} node.')
 
     # 1.1 Talk to Core, get quote
-    core_socket = core.IPC(1338)
+    core_socket = core.IPC(5552)
     core_socket.connect()
     results_json = core_socket.get_report()
-    results_json = json.loads(results_json)
-    report = results_json['report']
-    signing_key = results_json['pubkey']
+    signing_key = results_json['pub_key']
+    quote = ias.Quote.from_enigma_proxy(
+        results_json['quote'], server=CONFIG['IAS_PROXY'])
     log.info('ECDSA Signing Key: {}'.format(signing_key))
-    # quote = generate_quote(report)  # TODO: Generate quote via swig
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account, w3 = utils.unlock_wallet(provider)
@@ -53,28 +51,39 @@ def start(datadir, provider):
     eng_contract = utils.load_contract(
         w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
     )
-    # TODO: Fred: Please add the token contract(not sure which is it exactly)
-    # TODO: Is the token for testing only? I see it only in the `trigger` function.
-    worker = core.Worker(
-        account, eng_contract, token=None, ecdsa_pubkey=signing_key)
-    worker.register()
+    token_contract = utils.load_contract(
+        w3, os.path.join(PACKAGE_PATH, CONFIG['TOKEN_PATH']))
 
-    # 2.1 Listen for outside connection for exchanging keys.
-    # TODO: Encryption key exchange protocol
-    signed, enc_pubkey = core_socket.get_key()
-    log.info('Encryption Pubkey: {}'.format(enc_pubkey))
-    log.info('Signature for the pubkey: {}'.format(signed))
+    worker = core.Worker(
+        account=account,
+        contract=eng_contract,
+        token=token_contract,
+        ecdsa_pubkey=bytes.fromhex(signing_key),
+        quote=quote)
+
+    tx = worker.register(
+        report=json.dumps(quote.report),
+        sig=quote.sig,
+        report_cert=quote.cert)
+    w3.eth.waitForTransactionReceipt(tx)
+    # The encryption key right now is fixed: sha2("EnigmaMPC")
+    # # 2.1 Listen for outside connection for exchanging keys.
+    # # TODO: Encryption key exchange protocol
+    # signed, enc_pubkey = core_socket.get_key()
+    # log.info('Encryption Pubkey: {}'.format(enc_pubkey))
+    # log.info('Signature for the pubkey: {}'.format(signed))
 
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async
     listener = ethereum.Listener(eng_contract)
     log.info('Listenning for new tasks')
-    for task in listener.watch():
+    for task, block in listener.watch():
         # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
-        handle_task(w3, worker, task, core_socket)
+        handle_task(w3, worker, task, block, core_socket)
+        log.info('Listenning for new tasks')
 
 
-def handle_task(w3, worker, task, core_socket):
+def handle_task(w3, worker, task, block, core_socket):
     log.debug('The task:', task)
     # TODO: this is hard to unit test
     # I think that we should allow a mock core with the same properties of core
@@ -83,8 +92,8 @@ def handle_task(w3, worker, task, core_socket):
 
     # 3. Compute the task
     bytecode = w3.eth.getCode(
-        w3.toChecksumAddress(task['callingContract']))
-    bytecode = bytes(bytecode).hex()
+        w3.toChecksumAddress(task.dappContract))
+    bytecode = bytecode.hex()
     log.info('the bytecode: {}'.format(bytecode))
 
     # The arguments are now RLP encoded
@@ -95,37 +104,21 @@ def handle_task(w3, worker, task, core_socket):
     # TODO: what happens if this worker rejects a task?
     # TODO: how does the worker know if he is selected to perform the task?
     sig, results = core_socket.exec_evm(
-        bytecode,
-        # TODO: Check if arguments are right.
-        # TODO: Discuss where the IV comes from
-        function=task['callable'],
-        callable_args=task['callable_args'].hex(),
-        preprocessors=task['preprocessors'],
-        callback=task['callback'],
-        #TODO: change IV
-        iv='922a49d269f31ce6b8fe1e977550151a'
-    )
-    print(sig)
-    sig = HexBytes(b'0x'+sig)
-    print(sig)
-    print(results)
+        bytecode=bytecode,
+        callable=task.callable,
+        callable_args=task.callableArgs.hex(),
+        preprocessors=task.preprocessors,
+        callback=task.callback)
     # results are a just list of addresses.
     # sign is only on ''.join(results)
 
     # 4. Commit the output back to the contract
-    results_dict = {
-        'secret_contract': task['callingContract'],
-        'task_id': task['taskId'],
-        'data': b'0x' + results,
-        'sig': HexBytes(b'0x'+sig),
-    }
-    print(results_dict)
-    worker.commit_results(
-        secret_contract=results_dict['secret_contract'],
-        task_id=results_dict['task_id'],
-        data=results_dict['data'],
-        sig=sig,
-    )
+    tx = worker.commit_results(
+        task.taskId, results, sig, block)
+    w3.eth.waitForTransactionReceipt(tx)
+    event = utils.event_data(worker.contract, tx, 'CommitResults')
+    # TODO: Handle failure
+    assert event['args']['_success']
 
 
 if __name__ == '__main__':

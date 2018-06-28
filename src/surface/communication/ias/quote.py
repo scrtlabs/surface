@@ -35,6 +35,7 @@ class Quote(object):
 
         else:
             if self.verify_report(response_report):
+                response_report['report'] = json.loads(response_report['report'])
                 data = base64.b64decode(
                     response_report['report']['isvEnclaveQuoteBody'])
                 self._build_quote(data)
@@ -70,11 +71,8 @@ class Quote(object):
         if result['validate'] != 'True':
             raise ValueError("The server failed to verify Intel's signature")
 
-        result['report'] = json.loads(result['report'])
-
         if not cls.verify_report(result):
             raise ValueError("Falied self verifying Intel's signature")
-
         return cls(response_report=result)
 
     @classmethod
@@ -101,9 +99,7 @@ class Quote(object):
                 raise ValueError("The Signature is invalid: ", response_report['signature'])
         try:
             OpenSSL.crypto.verify(report_cert, sig,
-                                  json.dumps(
-                                      response_report['report'],
-                                      separators=(',', ':')).encode('utf-8'),
+                                  response_report['report'],
                                   'sha256')
         except OpenSSL.crypto.Error:
             return False

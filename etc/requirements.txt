@@ -9,14 +9,14 @@ coincurve==7.1.0
 cryptography==2.2.2
 cytoolz==0.9.0.1
 ecdsa==0.13
-eth-abi==1.0.0
+eth-abi==1.1.1
 eth-account==0.2.2
 eth-hash==0.1.1
 eth-keyfile==0.5.1
 eth-keys==0.2.0b3
 eth-rlp==0.1.2
-eth-tester==0.1.0b11
-eth-utils==1.0.1
+eth-tester==0.1.0b26
+eth-utils==1.0.3
 ethereum==2.3.1
 future==0.16.0
 hexbytes==0.1.0

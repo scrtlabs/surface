@@ -72,7 +72,7 @@ class Quote(object):
             raise ValueError("The server failed to verify Intel's signature")
 
         if not cls.verify_report(result):
-            raise ValueError("Falied self verifying Intel's signature")
+            raise ValueError("Failed self verifying Intel's signature")
         return cls(response_report=result)
 
     @classmethod

@@ -43,7 +43,7 @@ def start(datadir, provider, network):
     log.info('Starting up {} node.')
 
     # 1.1 Talk to Core, get quote
-    core_socket = core.IPC(5552)
+    core_socket = core.IPC(CONFIG['IPC_PORT'])
     core_socket.connect()
     results_json = core_socket.get_report()
     signing_key = results_json['pub_key']

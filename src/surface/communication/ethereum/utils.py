@@ -137,7 +137,7 @@ def unlock_wallet(provider, network):
     account = w3.personal.listAccounts[0]
 
     unlock = (network != 'ganache')
-    while not unlock:
+    while unlock:
         try:
             passhrase = getpass.getpass(
                 'Enter your the passphrase for account: ' + account + '\n')

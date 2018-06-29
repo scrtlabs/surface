@@ -91,7 +91,7 @@ def start(datadir, provider, network):
 
 
 def handle_task(w3, worker, task, block, core_socket):
-    log.debug('The task:', task)
+    log.debug('TaskId: {}'.format(task.taskId.hex()))
     # TODO: this is hard to unit test
     # I think that we should allow a mock core with the same properties of core
     # but returning mock results. We should be able to decouple unit testing of
@@ -116,8 +116,7 @@ def handle_task(w3, worker, task, block, core_socket):
         callable_args=task.callableArgs.hex(),
         preprocessors=task.preprocessors,
         callback=task.callback)
-    # results are a just list of addresses.
-    # sign is only on ''.join(results)
+    print(results)
 
     # 4. Commit the output back to the contract
     tx = worker.commit_results(

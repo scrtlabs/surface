@@ -9,7 +9,7 @@ import sha3
 
 core_socket = core.IPC(5552)
 callable = 'mixAddresses(uint32,address[],uint256)'
-callback = 'distribute(uint32,address[])'
+callback = 'distribute(uint,address[])'
 # These are encrypted using the hash of "EnigmaMPC", using IV: 000102030405060708090a0b.
 # '0x4B8D2c72980af7E6a0952F87146d6A225922acD7',
 # '0x1d1B9890D277dE99fa953218D4C02CAC764641d7',

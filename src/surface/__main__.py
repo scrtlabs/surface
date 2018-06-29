@@ -33,7 +33,13 @@ DATADIR = os.path.expanduser(CONFIG['DATADIR'])
     show_default=True,
     help='The web3 provider url.',
 )
-def start(datadir, provider):
+@click.option(
+    '--network',
+    default=CONFIG['NETWORK'],
+    show_default=True,
+    help='The Ethereum network name.',
+)
+def start(datadir, provider, network):
     log.info('Starting up {} node.')
 
     # 1.1 Talk to Core, get quote
@@ -46,7 +52,7 @@ def start(datadir, provider):
     log.info('ECDSA Signing Key: {}'.format(signing_key))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
-    account, w3 = utils.unlock_wallet(provider)
+    account, w3 = utils.unlock_wallet(provider, network)
     # TODO: Need to talk on where the contract should be.
     eng_contract = utils.load_contract(
         w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
@@ -64,7 +70,8 @@ def start(datadir, provider):
     tx = worker.register(
         report=json.dumps(quote.report),
         sig=quote.sig,
-        report_cert=quote.cert)
+        report_cert=quote.cert,
+    )
     w3.eth.waitForTransactionReceipt(tx)
     # The encryption key right now is fixed: sha2("EnigmaMPC")
     # # 2.1 Listen for outside connection for exchanging keys.

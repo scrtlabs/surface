@@ -3,5 +3,6 @@
   "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
   "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
   "DATADIR": "~/.enigma",
-  "IAS_PROXY": "https://sgx.enigma.co/api"
+  "IAS_PROXY": "https://sgx.enigma.co/api",
+  "NETWORK": "ganache"
 }

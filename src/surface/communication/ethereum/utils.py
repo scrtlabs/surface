@@ -130,13 +130,13 @@ def cast_arg(arg_type, arg):
         return arg
 
 
-def unlock_wallet(provider):
+def unlock_wallet(provider, network):
     w3 = Web3(HTTPProvider(provider))
     w3.eth.enable_unaudited_features()
 
     account = w3.personal.listAccounts[0]
 
-    unlock = False
+    unlock = (network != 'ganache')
     while not unlock:
         try:
             passhrase = getpass.getpass(

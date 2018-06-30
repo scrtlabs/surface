@@ -10,46 +10,62 @@ from web3 import Web3
 from surface.communication.core import Worker
 from surface.communication.ethereum import Listener
 from surface.communication.ethereum.utils import event_data
-from tests.fixtures import w3, account, contract, custodian_key, \
-    dapp_contract, worker, token_contract, workers_data, config, report
+from tests.fixtures import w3, contract, \
+    dapp_contract, worker, token_contract, workers_data, config, \
+    principal, principal_data
 from tests.utils import get_private_key
 
 
-def test_register(w3, worker, contract, report):
-    # This will fail if already registered
-    # Redeploy the contract to clear the state
-
-    tx = worker.register(*report)
+def test_register_principal(w3, principal, contract, principal_data):
+    tx = principal.register(principal_data['report'], principal_data['cert'],
+                            principal_data['report_sig'])
     w3.eth.waitForTransactionReceipt(tx)
 
     event = event_data(contract, tx, 'Register')
     assert event['args']['_success']
 
 
+def test_register(w3, worker, contract, workers_data):
+    # This will fail if already registered
+    # Redeploy the contract to clear the state
+
+    worker_data = workers_data[0]
+    tx = worker.register(worker_data['report'], worker_data['cert'],
+                         worker_data['report_sig'])
+    w3.eth.waitForTransactionReceipt(tx)
+
+    event = event_data(contract, tx, 'Register')
+    assert event['args']['_success']
+
+
+# @pytest.mark.skip(
+#     reason="disabled pending some adjustment to the test dataset")
 def test_info(worker):
     info = worker.info()
     assert info
 
 
-def test_set_worker_params(w3, worker, workers_data):
+# @pytest.mark.skip(
+#     reason="disabled pending some adjustment to the test dataset")
+def test_set_worker_params(w3, principal, principal_data):
     seed = randint(1, 1000000)
 
     hash = Web3.soliditySha3(
         abi_types=['uint256'],
         values=[seed],
     )
-    priv = get_private_key(worker, workers_data)
+    priv = get_private_key(principal_data)
     priv_bytes = bytes.fromhex(priv)
 
     sig = w3.eth.account.signHash(hash, private_key=priv_bytes)
 
-    tx = worker.contract.functions.setWorkersParams(
+    tx = principal.contract.functions.setWorkersParams(
         seed, sig['signature']
-    ).transact({'from': worker.account})
+    ).transact({'from': principal.account})
 
     w3.eth.waitForTransactionReceipt(tx)
 
-    event = event_data(worker.contract, tx, 'WorkersParameterized')
+    event = event_data(principal.contract, tx, 'WorkersParameterized')
     assert event['args']['_success']
 
 
@@ -97,6 +113,8 @@ def task(w3, request, dapp_contract, worker, contract):
     yield event['args']
 
 
+# @pytest.mark.skip(
+#     reason="disabled pending some adjustment to the test dataset")
 def test_find_selected_worker(worker, contract, task):
     selected_worker = worker.find_selected_worker(task)
     contract_selected_worker = contract.functions.selectWorker(
@@ -127,7 +145,7 @@ def results(request):
 
 
 # @pytest.mark.skip(
-#     reason="something about the signature does not match Solidity")
+#     reason="disabled pending some adjustment to the test dataset")
 def test_commit_results(w3, task, worker, dapp_contract, contract, results,
                         workers_data):
     # Code from here an below normally belong to Core
@@ -141,7 +159,9 @@ def test_commit_results(w3, task, worker, dapp_contract, contract, results,
         values=[callableArgs, data, bytecode]
     )
 
-    priv = get_private_key(worker, workers_data)
+    # TODO: improve to support multiple workers
+    worker_data = workers_data[0]
+    priv = get_private_key(worker_data)
     priv_bytes = bytes.fromhex(priv)
 
     sig = w3.eth.account.signHash(hash, private_key=priv_bytes)

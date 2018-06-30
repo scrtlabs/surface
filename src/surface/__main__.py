@@ -100,6 +100,15 @@ def handle_task(w3, worker, task, block, core_socket):
     # but returning mock results. We should be able to decouple unit testing of
     # surface from core.
 
+    selected_worker = worker.find_selected_worker(task)
+    if selected_worker != worker.account:
+        log.info(
+            'skipping task {} assign to: {}'.format(
+                task['taskId'], selected_worker
+            )
+        )
+        return False
+
     # 3. Compute the task
     bytecode = w3.eth.getCode(
         w3.toChecksumAddress(task.dappContract))

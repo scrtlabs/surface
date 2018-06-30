@@ -6,5 +6,6 @@
   "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
   "DATADIR": "~/.enigma",
   "IAS_PROXY": "https://sgx.enigma.co/api",
-  "NETWORK": "ganache"
+  "NETWORK": "ganache",
+  "WORKER_ID": 1
 }

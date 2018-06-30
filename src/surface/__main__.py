@@ -52,7 +52,7 @@ def start(datadir, provider, network):
     log.info('ECDSA Signing Key: {}'.format(signing_key))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
-    account, w3 = utils.unlock_wallet(provider, network)
+    account, w3 = utils.unlock_wallet(provider, network, CONFIG['WORKER_ID'])
     # TODO: Need to talk on where the contract should be.
     eng_contract = utils.load_contract(
         w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])

@@ -83,11 +83,13 @@ def start(datadir, provider, network):
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async
     listener = ethereum.Listener(eng_contract)
-    log.info('Listenning for new tasks')
+    log.info('Listening for new tasks')
     for task, block in listener.watch():
-        # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
+        # TODO: It's nice to have this in the main function but it's not 
+        # unit testable, feel free to change this but just make sure that 
+        # it's a unit
         handle_task(w3, worker, task, block, core_socket)
-        log.info('Listenning for new tasks')
+        log.info('Listening for new tasks')
 
 
 def handle_task(w3, worker, task, block, core_socket):

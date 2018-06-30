@@ -113,7 +113,7 @@ class Quote(object):
 
     def serialize(self):
         report = json.dumps(self.report, separators=(',', ':'))
-        sig = '0x' + self.sig
+        sig = bytes.fromhex(self.sig)
         cert = self.cert
         return report, sig, cert
 

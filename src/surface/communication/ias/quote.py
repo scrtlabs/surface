@@ -35,13 +35,15 @@ class Quote(object):
 
         else:
             if self.verify_report(response_report):
-                response_report['report'] = json.loads(response_report['report'])
+                response_report['report'] = json.loads(
+                    response_report['report'])
                 data = base64.b64decode(
                     response_report['report']['isvEnclaveQuoteBody'])
                 self._build_quote(data)
                 object.__setattr__(self, 'report', response_report['report'])
                 object.__setattr__(self, 'sig', response_report['signature'])
-                object.__setattr__(self, 'cert', response_report['certificate'])
+                object.__setattr__(self, 'cert',
+                                   response_report['certificate'])
 
     def _build_quote(self, quote_bytes):
         object.__setattr__(self, 'quote_bytes', quote_bytes)
@@ -51,7 +53,8 @@ class Quote(object):
         object.__setattr__(self, 'signature', quote_bytes[436:])
 
     @classmethod
-    def from_enigma_proxy(cls, encrypted_quote, server='http://127.0.0.1:5000/api'):
+    def from_enigma_proxy(cls, encrypted_quote,
+                          server='http://127.0.0.1:5000/api'):
         body = {
             'jsonrpc': '2.0',
             'method': 'validate',
@@ -65,7 +68,8 @@ class Quote(object):
         except requests.exceptions.ConnectionError:
             raise ConnectionError("Couldn't connect to the server: ", server)
         if response.status_code != 200:
-            raise ValueError("Couldn't verify the quote, HTTP code: ", response.status_code)
+            raise ValueError("Couldn't verify the quote, HTTP code: ",
+                             response.status_code)
 
         result = response.json()['result']
         if result['validate'] != 'True':
@@ -78,7 +82,8 @@ class Quote(object):
     @classmethod
     def verify_report(cls, response_report):
         report_cert = OpenSSL.crypto.load_certificate(
-            OpenSSL.crypto.FILETYPE_PEM, response_report['certificate'].encode('ascii'))
+            OpenSSL.crypto.FILETYPE_PEM,
+            response_report['certificate'].encode('ascii'))
         ca_cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM,
                                                   response_report['ca'])
         trusted_store = OpenSSL.crypto.X509Store()
@@ -96,7 +101,8 @@ class Quote(object):
             if len(response_report['signature']) == 256:
                 sig = response_report['signature']
             else:
-                raise ValueError("The Signature is invalid: ", response_report['signature'])
+                raise ValueError("The Signature is invalid: ",
+                                 response_report['signature'])
         try:
             OpenSSL.crypto.verify(report_cert, sig,
                                   response_report['report'],
@@ -104,6 +110,12 @@ class Quote(object):
         except OpenSSL.crypto.Error:
             return False
         return True
+
+    def serialize(self):
+        report = json.dumps(self.report, separators=(',', ':'))
+        sig = '0x' + self.sig
+        cert = self.cert
+        return report, sig, cert
 
     def __setattr__(self, key, value):
         raise ImmutableException(

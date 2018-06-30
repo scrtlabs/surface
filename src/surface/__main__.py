@@ -43,7 +43,7 @@ def start(datadir, provider, network):
     log.info('Starting up {} node.')
 
     # 1.1 Talk to Core, get quote
-    core_socket = core.IPC(CONFIG['IPC_HOST'],CONFIG['IPC_PORT'])
+    core_socket = core.IPC(CONFIG['IPC_HOST'], CONFIG['IPC_PORT'])
     core_socket.connect()
     results_json = core_socket.get_report()
     signing_key = results_json['pub_key']
@@ -67,10 +67,11 @@ def start(datadir, provider, network):
         ecdsa_pubkey=bytes.fromhex(signing_key),
         quote=quote)
 
+    report, sig, cert = quote.serialize()
     tx = worker.register(
-        report=json.dumps(quote.report),
-        sig=quote.sig,
-        report_cert=quote.cert,
+        report=report,
+        sig=sig,
+        report_cert=cert,
     )
     w3.eth.waitForTransactionReceipt(tx)
     # The encryption key right now is fixed: sha2("EnigmaMPC")

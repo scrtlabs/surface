@@ -38,9 +38,6 @@ def account(w3, request):
         account_data = json.load(data_file)
 
     account = w3.toChecksumAddress(account_data['address'])
-    w3.personal.unlockAccount(
-        account, account_data['passphrase']
-    )
     return account
 
 

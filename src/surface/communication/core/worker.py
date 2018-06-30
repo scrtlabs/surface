@@ -102,9 +102,8 @@ class Worker:
         :return:
         """
         log.info('registering account: {}'.format(self.account))
-        sig = '0x' + sig
-
         encoded_report = rlp.encode([report, report_cert, sig])
+
         tx = self.contract.functions.register(
             self.signer, encoded_report
         ).transact({'from': self.account})

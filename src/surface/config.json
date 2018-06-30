@@ -1,6 +1,6 @@
 {
-  "PROVIDER_URL": "http://10.0.0.77:8545",
-  "IPC_HOST": "10.0.0.77",
+  "PROVIDER_URL": "http://127.0.0.1:8545",
+  "IPC_HOST": "127.0.0.1",
   "IPC_PORT": "5552",
   "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
   "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",

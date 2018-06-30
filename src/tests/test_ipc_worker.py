@@ -2,7 +2,7 @@ from surface.communication import core
 from surface.communication.ias import Quote
 from surface.communication.core import Worker
 import json
-from tests.fixtures import w3, account, contract, custodian_key, \
+from tests.fixtures import w3, contract,  \
     dapp_contract, worker, token_contract, workers_data, config, report
 from surface.communication.ethereum.utils import event_data
 import sha3
@@ -18,13 +18,13 @@ callable_args = ['6', ['66cc28084054bbe4f805de4ec95ca5d77af2905a779d9f9df7219b54
 preprocessors = [b'rand()']
 
 
-def test_trip_to_core(w3, contract, account, token_contract, dapp_contract):
+def test_trip_to_core(w3, contract, token_contract, dapp_contract):
     core_socket.connect()
     results_json = core_socket.get_report()
     pubkey = results_json['pub_key']
     quote = Quote.from_enigma_proxy(results_json['quote'], server='https://sgx.enigma.co/api')
     worker = Worker(
-        account=account,
+        account=w3.personal.listAccounts[0],
         contract=contract,
         token=token_contract,
         ecdsa_pubkey=bytes.fromhex(pubkey),

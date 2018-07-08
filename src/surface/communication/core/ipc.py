@@ -62,6 +62,7 @@ class IPC:
                 'callable_args': callable_args,
                 'preprocessors': preprocessors,
                 'callback': callback}
+        log.debug('Sending To EVM:{}'.format(args))
         self.socket.send_json(args)
         output = self.socket.recv_json()
         sig = output['signature']

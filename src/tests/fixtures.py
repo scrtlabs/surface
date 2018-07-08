@@ -44,9 +44,11 @@ def dapp_contract(w3, config):
 
 @pytest.fixture
 def contract(w3, config):
-    return load_contract(
+    a = load_contract(
         w3, os.path.join(PACKAGE_PATH, config['CONTRACT_PATH'])
     )
+    print(a.address)
+    return a
 
 
 @pytest.fixture

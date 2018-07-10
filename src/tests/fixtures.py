@@ -140,13 +140,14 @@ def principal(w3, contract, principal_data, token_contract):
     priv_bytes = bytearray.fromhex(principal_data['signing_priv_key'])
     priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
     pub = priv.get_verifying_key().to_string()
+    address = '0x' + Web3.sha3(hexstr=pub.hex()).hex()[-40:]
 
     account = w3.personal.listAccounts[9]
     principal = Worker(
         account=account,
         contract=contract,
         token=token_contract,
-        ecdsa_pubkey=pub,
+        ecdsa_address=address,
         quote=principal_data['quote'],
     )
     yield principal
@@ -158,13 +159,14 @@ def worker(w3, contract, workers_data, token_contract):
         priv_bytes = bytearray.fromhex(worker_data['signing_priv_key'])
         priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
         pub = priv.get_verifying_key().to_string()
+        address = '0x' + Web3.sha3(hexstr=pub.hex()).hex()[-40:]
 
         account = w3.personal.listAccounts[index]
         worker = Worker(
             account=account,
             contract=contract,
             token=token_contract,
-            ecdsa_pubkey=pub,
+            ecdsa_address=address,
             quote=worker_data['quote'],
         )
         yield worker

@@ -28,7 +28,7 @@ def test_trigger(w3, dapp_contract, token_contract, contract):
         account=w3.personal.listAccounts[0],
         contract=contract,
         token=token_contract,
-        ecdsa_pubkey=b'0000000000000000000000000000000000000000000000000000000000000000',
+        ecdsa_address='0x0000000000000000000000000000000000000000',
         quote=''
     )
     tx = worker.trigger_compute_task(
@@ -62,7 +62,7 @@ def test_billionare(w3, token_contract, contract, config):
         account=account,
         contract=contract,
         token=token_contract,
-        ecdsa_pubkey=b'0000000000000000000000000000000000000000000000000000000000000000',
+        ecdsa_address='0x0000000000000000000000000000000000000000',
         quote=''
     )
     tx = worker.trigger_compute_task(

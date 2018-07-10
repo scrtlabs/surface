@@ -52,7 +52,7 @@ def start(datadir, provider, dev_account):
     log.info('ECDSA Signing Key: {}'.format(signing_key))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
-    account_n = int(dev_account) if dev_account else None
+    account_n = int(dev_account) if dev_account is not None else None
     account, w3 = utils.unlock_wallet(provider, account_n)
     # TODO: Need to talk on where the contract should be.
     eng_contract = utils.load_contract(

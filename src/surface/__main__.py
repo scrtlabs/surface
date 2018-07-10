@@ -46,10 +46,11 @@ def start(datadir, provider, network):
     core_socket = core.IPC(CONFIG['IPC_HOST'], CONFIG['IPC_PORT'])
     core_socket.connect()
     results_json = core_socket.get_report()
-    signing_key = results_json['pub_key']
+    signing_address = results_json['address']
     quote = ias.Quote.from_enigma_proxy(
         results_json['quote'], server=CONFIG['IAS_PROXY'])
-    log.info('ECDSA Signing Key: {}'.format(signing_key))
+    log.info('ECDSA Signing address: {}'.format(signing_address))
+    log.info('ECDSA Signing address from Quote: {}'.format(quote.report_body.report_data.rstrip(b'\x00').decode()))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account, w3 = utils.unlock_wallet(provider, network, CONFIG['WORKER_ID'])
@@ -64,7 +65,7 @@ def start(datadir, provider, network):
         account=account,
         contract=eng_contract,
         token=token_contract,
-        ecdsa_pubkey=bytes.fromhex(signing_key),
+        ecdsa_address=signing_address,
         quote=quote)
 
     report, sig, cert = quote.serialize()

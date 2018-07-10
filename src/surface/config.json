@@ -1,11 +1,9 @@
 {
-  "PROVIDER_URL": "http://127.0.0.1:8545",
-  "IPC_HOST": "127.0.0.1",
-  "IPC_PORT": "5552",
+  "PROVIDER_URL": "http://10.0.0.75:8545",
+  "IPC_HOST": "10.0.0.75",
+  "IPC_PORT": "5554",
   "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
   "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
   "DATADIR": "~/.enigma",
-  "IAS_PROXY": "https://sgx.enigma.co/api",
-  "NETWORK": "ganache",
-  "WORKER_ID": 1
+  "IAS_PROXY": "https://sgx.enigma.co/api"
 }

@@ -35,6 +35,8 @@ DATADIR = os.path.expanduser(CONFIG['DATADIR'])
 )
 @click.option(
     '--dev-account',
+    default=CONFIG['WORKER_ID'] if CONFIG['WORKER_ID'] else None,
+    show_default=True,
     help='For development networks only, the account index.',
 )
 def start(datadir, provider, dev_account):

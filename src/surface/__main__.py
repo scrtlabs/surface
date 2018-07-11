@@ -39,7 +39,15 @@ DATADIR = os.path.expanduser(CONFIG['DATADIR'])
     show_default=True,
     help='For development networks only, the account index.',
 )
-def start(datadir, provider, dev_account):
+@click.option(
+    '--simulation',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Set this to disable SGX Hardware mode. you'll need to compile "
+         "enigma-core in simulation mode too"
+)
+def start(datadir, provider, dev_account, simulation):
     log.info('Starting up {} node.')
 
     # 1.1 Talk to Core, get quote
@@ -47,10 +55,15 @@ def start(datadir, provider, dev_account):
     core_socket.connect()
     results_json = core_socket.get_report()
     signing_address = results_json['address']
-    quote = ias.Quote.from_enigma_proxy(
-        results_json['quote'], server=CONFIG['IAS_PROXY'])
+    if not simulation:
+        quote = ias.Quote.from_enigma_proxy(
+            results_json['quote'], server=CONFIG['IAS_PROXY'])
+        log.info('ECDSA Signing address from Quote: {}'.format(quote.report_body.report_data.rstrip(b'\x00').decode()))
+        report, sig, cert = quote.serialize()
+    else:
+        quote = ias.Quote()
+        report, sig, cert = b'simulation', b'simulation', b'simulation'
     log.info('ECDSA Signing address: {}'.format(signing_address))
-    log.info('ECDSA Signing address from Quote: {}'.format(quote.report_body.report_data.rstrip(b'\x00').decode()))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account_n = int(dev_account) if dev_account is not None else None
@@ -69,7 +82,6 @@ def start(datadir, provider, dev_account):
         ecdsa_address=signing_address,
         quote=quote)
 
-    report, sig, cert = quote.serialize()
     tx = worker.register(
         report=report,
         sig=sig,

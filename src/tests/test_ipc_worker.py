@@ -21,13 +21,13 @@ preprocessors = [b'rand()']
 def test_trip_to_core(w3, contract, token_contract, dapp_contract):
     core_socket.connect()
     results_json = core_socket.get_report()
-    pubkey = results_json['pub_key']
+    address = results_json['address']
     quote = Quote.from_enigma_proxy(results_json['quote'], server='https://sgx.enigma.co/api')
     worker = Worker(
         account=w3.personal.listAccounts[0],
         contract=contract,
         token=token_contract,
-        ecdsa_pubkey=bytes.fromhex(pubkey),
+        ecdsa_address=address,
         quote=quote
     )
     tx = worker.register(

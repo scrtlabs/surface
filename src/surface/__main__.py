@@ -5,7 +5,6 @@ import os
 from logbook import Logger, StreamHandler
 import sys
 from hexbytes import HexBytes
-from pathlib import Path
 
 from surface.communication.ethereum import utils, Listener
 from surface.communication import ethereum, core, ias
@@ -70,10 +69,12 @@ def start(dev_account, ipc_connstr, provider_url):
     core_socket = core.IPC(ipc_host, ipc_port)
     core_socket.connect()
     results_json = core_socket.get_report()
-    signing_key = results_json['pub_key']
+    signing_address = results_json['address']
     quote = ias.Quote.from_enigma_proxy(
         results_json['quote'], server=config['IAS_PROXY'])
-    log.info('ECDSA Signing Key: {}'.format(signing_key))
+
+    log.info('ECDSA Signing address: {}'.format(signing_address))
+    log.info('ECDSA Signing address from Quote: {}'.format(quote.report_body.report_data.rstrip(b'\x00').decode()))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account_n = int(dev_account) if dev_account is not None else None
@@ -89,7 +90,7 @@ def start(dev_account, ipc_connstr, provider_url):
         account=account,
         contract=eng_contract,
         token=token_contract,
-        ecdsa_pubkey=bytes.fromhex(signing_key),
+        ecdsa_address=signing_address,
         quote=quote)
 
     report, sig, cert = quote.serialize()

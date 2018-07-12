@@ -7,27 +7,27 @@ from tests.fixtures import w3, contract,  \
 from surface.communication.ethereum.utils import event_data
 import sha3
 
-core_socket = core.IPC(5552)
+core_socket = core.IPC('5552')
 callable = 'mixAddresses(uint32,address[],uint256)'
 callback = 'distribute(uint,address[])'
 # These are encrypted using the hash of "EnigmaMPC", using IV: 000102030405060708090a0b.
 # '0x4B8D2c72980af7E6a0952F87146d6A225922acD7',
 # '0x1d1B9890D277dE99fa953218D4C02CAC764641d7',
-callable_args = ['6', ['66cc28084054bbe4f805de4ec95ca5d77af2905a779d9f9df7219b544cd7f23084a249bad006a4e84dc0a95880a3b057403ba3bee35c22d3b1b4000102030405060708090a0b',
-                       '66cc2d2e4952b0bff607a344ce0aa7a506fd970b779d9ee9fe2eee543983f632f7d34bb5d602f1ba6dc0b696564db7bc98262bb5dbeeabbd100a000102030405060708090a0b']]
+callable_args = ['6', ['163d71e1d8002a5da4336b9fbcdb6cbc20a06c2744fcf91557918a32f79fecfa54581bdab2b6d6925d95511e36af7cd5ed98b8a7a9a56107000f000102030405060708090a0b',
+                       '163d74c7d1062106aa311695bb8d6ece5caf6b7644fcf8615e9eff3282cbe8f8272919d5b4b283c07d952518558b245ef7c58ae1d0a6159b035b000102030405060708090a0b']]
 preprocessors = [b'rand()']
 
 
 def test_trip_to_core(w3, contract, token_contract, dapp_contract):
     core_socket.connect()
     results_json = core_socket.get_report()
-    pubkey = results_json['pub_key']
+    address = results_json['address']
     quote = Quote.from_enigma_proxy(results_json['quote'], server='https://sgx.enigma.co/api')
     worker = Worker(
         account=w3.personal.listAccounts[0],
         contract=contract,
         token=token_contract,
-        ecdsa_pubkey=bytes.fromhex(pubkey),
+        ecdsa_address=address,
         quote=quote
     )
     tx = worker.register(

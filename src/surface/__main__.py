@@ -7,84 +7,158 @@ import sys
 from hexbytes import HexBytes
 
 from surface.communication.ethereum import utils, Listener
-from surface.communication import ethereum
-from surface.communication import core
+from surface.communication import ethereum, core, ias
 import surface
 
 StreamHandler(sys.stdout).push_application()
 log = Logger('main')
-PACKAGE_PATH = os.path.dirname(surface.__file__)
-with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
-    # TODO: add a user config file in ~/.enigma
-    CONFIG = json.load(conf)
 
-DATADIR = os.path.expanduser(CONFIG['DATADIR'])
+PACKAGE_PATH = os.path.dirname(surface.__file__)
+enigma_path = os.path.expanduser('~/.enigma')
+config_pkg = None
+try:
+    with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
+        config_pkg = json.load(conf)
+        if 'DATADIR' in config_pkg:
+            enigma_path = os.path.expanduser(config_pkg['DATADIR'])
+
+except Exception as e:
+    log.debug("config not found in the package directory: {}".format(e))
+
+config_user = None
+try:
+    with open(os.path.join(enigma_path, 'config.json')) as conf:
+        config_user = json.load(conf)
+
+except Exception as e:
+    log.debug("config not found in the `.enigma` directory: {}".format(e))
+
+config = {**config_pkg, **config_user} \
+    if config_pkg is not None and config_user is not None \
+    else config_user if config_user is not None \
+    else config_pkg if config_pkg is not None else None
+
+if config is None:
+    raise ValueError('Config not found in neither package nor home folder')
 
 
 @click.command()
 @click.option(
-    '--datadir',
-    default=DATADIR,
-    show_default=True,
-    help='The root data director.',
+    '--dev-account',
+    default=None,
+    help='For development networks only, the account index.',
 )
 @click.option(
-    '--provider',
-    default=CONFIG['PROVIDER_URL'],
-    show_default=True,
-    help='The web3 provider url.',
+    '--ipc-connstr',
+    default=config['IPC_CONNSTR'],
+    help='The Core connection string as [host]:[port] (e.g. localhost:5552).',
 )
-def start(datadir, provider):
-    log.info('Starting up {} node.')
+@click.option(
+    '--provider-url',
+    default=config['PROVIDER_URL'],
+    help='The Ethereum HTTP provider (e.g. http://localhost:8545).',
+)
+@click.option(
+    '--ias-proxy',
+    default=config['IAS_PROXY'],
+    help='The Intel Attestation Service Proxy URL'
+         ' (e.g. https://sgx.enigma.co/api).',
+)
+@click.option(
+    '--simulation',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Set this to disable SGX Hardware mode. you'll need to compile "
+         "enigma-core in simulation mode too"
+)
+def start(dev_account, ipc_connstr, provider_url, ias_proxy, simulation):
+    log.info('Starting up node.')
+
+    if dev_account is None:
+        dev_account = config['WORKER_ID'] if 'WORKER_ID' in config else None
 
     # 1.1 Talk to Core, get quote
-    core_socket = core.IPC(1338)
+    ipc_host, ipc_port = ipc_connstr.split(':')
+    core_socket = core.IPC(ipc_host, ipc_port)
     core_socket.connect()
     results_json = core_socket.get_report()
-    results_json = json.loads(results_json)
-    report = results_json['report']
-    signing_key = results_json['pubkey']
-    log.info('ECDSA Signing Key: {}'.format(signing_key))
-    # quote = generate_quote(report)  # TODO: Generate quote via swig
+    signing_address = results_json['address']
+
+    if not simulation:
+        quote = ias.Quote.from_enigma_proxy(
+            results_json['quote'], server=ias_proxy)
+        log.info('ECDSA Signing address from Quote: {}'.format(
+            quote.report_body.report_data.rstrip(b'\x00').decode()))
+        report, sig, cert = quote.serialize()
+    else:
+        quote = ias.Quote()
+        report, sig, cert = b'simulation', b'simulation', b'simulation'
+
+    log.info('ECDSA Signing address: {}'.format(signing_address))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
-    account, w3 = utils.unlock_wallet(provider)
+    account_n = int(dev_account) if dev_account is not None else None
+    account, w3 = utils.unlock_wallet(provider_url, account_n)
     # TODO: Need to talk on where the contract should be.
     eng_contract = utils.load_contract(
-        w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
+        w3, os.path.join(PACKAGE_PATH, config['CONTRACT_PATH'])
     )
-    # TODO: Fred: Please add the token contract(not sure which is it exactly)
-    # TODO: Is the token for testing only? I see it only in the `trigger` function.
-    worker = core.Worker(
-        account, eng_contract, token=None, ecdsa_pubkey=signing_key)
-    worker.register()
+    token_contract = utils.load_contract(
+        w3, os.path.join(PACKAGE_PATH, config['TOKEN_PATH']))
 
-    # 2.1 Listen for outside connection for exchanging keys.
-    # TODO: Encryption key exchange protocol
-    signed, enc_pubkey = core_socket.get_key()
-    log.info('Encryption Pubkey: {}'.format(enc_pubkey))
-    log.info('Signature for the pubkey: {}'.format(signed))
+    worker = core.Worker(
+        account=account,
+        contract=eng_contract,
+        token=token_contract,
+        ecdsa_address=signing_address,
+        quote=quote)
+
+    tx = worker.register(
+        report=report,
+        sig=sig,
+        report_cert=cert,
+    )
+    w3.eth.waitForTransactionReceipt(tx)
+    # The encryption key right now is fixed: sha2("EnigmaMPC")
+    # # 2.1 Listen for outside connection for exchanging keys.
+    # # TODO: Encryption key exchange protocol
+    # signed, enc_pubkey = core_socket.get_key()
+    # log.info('Encryption Pubkey: {}'.format(enc_pubkey))
+    # log.info('Signature for the pubkey: {}'.format(signed))
 
     # 2.2 Listen for new tasks
     # TODO: consider spawning threads/async
     listener = ethereum.Listener(eng_contract)
-    log.info('Listenning for new tasks')
-    for task in listener.watch():
-        # TODO: It's nice to have this in the main function but it's not unit testable, feel free to change this but just make sure that it's a unit
-        handle_task(w3, worker, task, core_socket)
+    log.info('Listening for new tasks')
+    for task, block in listener.watch():
+        # TODO: It's nice to have this in the main function but it's not 
+        # unit testable, feel free to change this but just make sure that 
+        # it's a unit
+        handle_task(w3, worker, task, block, core_socket)
+        log.info('Listening for new tasks')
 
 
-def handle_task(w3, worker, task, core_socket):
-    log.debug('The task:', task)
+def handle_task(w3, worker, task, block, core_socket):
+    log.debug('TaskId: {}'.format(task.taskId.hex()))
     # TODO: this is hard to unit test
     # I think that we should allow a mock core with the same properties of core
     # but returning mock results. We should be able to decouple unit testing of
     # surface from core.
 
+    selected_worker = worker.find_selected_worker(task)
+    if selected_worker != worker.account:
+        log.info(
+            'skipping task {} assign to: {}'.format(
+                task['taskId'], selected_worker
+            )
+        )
+        return False
+
     # 3. Compute the task
     bytecode = w3.eth.getCode(
-        w3.toChecksumAddress(task['callingContract']))
-    bytecode = bytes(bytecode).hex()
+        w3.toChecksumAddress(task.dappContract))
+    bytecode = bytecode.hex()
     log.info('the bytecode: {}'.format(bytecode))
 
     # The arguments are now RLP encoded
@@ -95,37 +169,20 @@ def handle_task(w3, worker, task, core_socket):
     # TODO: what happens if this worker rejects a task?
     # TODO: how does the worker know if he is selected to perform the task?
     sig, results = core_socket.exec_evm(
-        bytecode,
-        # TODO: Check if arguments are right.
-        # TODO: Discuss where the IV comes from
-        function=task['callable'],
-        callable_args=task['callable_args'].hex(),
-        preprocessors=task['preprocessors'],
-        callback=task['callback'],
-        #TODO: change IV
-        iv='922a49d269f31ce6b8fe1e977550151a'
-    )
-    print(sig)
-    sig = HexBytes(b'0x'+sig)
-    print(sig)
+        bytecode=bytecode,
+        callable=task.callable,
+        callable_args=task.callableArgs.hex(),
+        preprocessors=task.preprocessors,
+        callback=task.callback)
     print(results)
-    # results are a just list of addresses.
-    # sign is only on ''.join(results)
 
     # 4. Commit the output back to the contract
-    results_dict = {
-        'secret_contract': task['callingContract'],
-        'task_id': task['taskId'],
-        'data': b'0x' + results,
-        'sig': HexBytes(b'0x'+sig),
-    }
-    print(results_dict)
-    worker.commit_results(
-        secret_contract=results_dict['secret_contract'],
-        task_id=results_dict['task_id'],
-        data=results_dict['data'],
-        sig=sig,
-    )
+    tx = worker.commit_results(
+        task.taskId, results, sig, block)
+    w3.eth.waitForTransactionReceipt(tx)
+    event = utils.event_data(worker.contract, tx, 'CommitResults')
+    # TODO: Handle failure
+    assert event['args']['_success']
 
 
 if __name__ == '__main__':

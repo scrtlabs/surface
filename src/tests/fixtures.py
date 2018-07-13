@@ -32,42 +32,23 @@ def w3(config):
 
 
 @pytest.fixture
-def account(w3, request):
-    testdir = os.path.dirname(request.module.__file__)
-    with open(os.path.join(testdir, 'data', 'account.json')) as data_file:
-        account_data = json.load(data_file)
-
-    account = w3.toChecksumAddress(account_data['address'])
-    w3.personal.unlockAccount(
-        account, account_data['passphrase']
-    )
-    return account
-
-
-@pytest.fixture
 def token_contract(w3, config):
     return load_contract(w3, os.path.join(PACKAGE_PATH, config['TOKEN_PATH']))
 
 
 @pytest.fixture
 def dapp_contract(w3, config):
-    return load_contract(w3, os.path.join(PACKAGE_PATH, config['COIN_MIXER_PATH']))
+    return load_contract(w3,
+                         os.path.join(PACKAGE_PATH, config['COIN_MIXER_PATH']))
 
 
 @pytest.fixture
 def contract(w3, config):
-    return load_contract(
+    a = load_contract(
         w3, os.path.join(PACKAGE_PATH, config['CONTRACT_PATH'])
     )
-
-
-@pytest.fixture
-def custodian_key(request):
-    testdir = os.path.dirname(request.module.__file__)
-    with open(os.path.join(testdir, 'data', 'account.json')) as data_file:
-        account_data = json.load(data_file)
-
-    return account_data['key']
+    print(a.address)
+    return a
 
 
 @pytest.fixture
@@ -79,28 +60,117 @@ def secret_contract(w3, config):
 
 @pytest.fixture
 def workers_data(request):
-    testdir = os.path.dirname(request.module.__file__)
-    with open(os.path.join(testdir, 'data', 'workers.json')) as data_file:
-        workers_data = json.load(data_file)
-
+    workers_data = [
+        dict(
+            signing_priv_key='d9ef555a1b0f7e4e4ac9f0bf0c3994d463215c47daced6da2b9c2f10cdd310c4',
+            report='{"id":"134559509672344685628710913439649204858","timestamp":"2018-06-30T03:57:05.869148","isvEnclaveQuoteStatus":"GROUP_OUT_OF_DATE","platformInfoBlob":"1502006504000100000505020401010000000000000000000007000006000000020000000000000ADA7D34C6B2DC1D1786CA05F2DD3F57A04AF4D7249084C307ADFF2D3C474AD56AB581BFCB49512B7F264D619AC39F24272E6BD60E65E7BCAC0C0E5B08110D3EDF1C","isvEnclaveQuoteBody":"AgAAANoKAAAHAAYAAAAAABYB+Vw5ueowf+qruQGtw+7d6cgYupo5aV1se5h5PNRtBAT/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAIy+zzPDwoSqL0nl7GbotOJDsPArAtCYDfi2YSqPF7XbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACD1xnnferKFHD2uvYqTXdDA8iZ22kCD5xw7h38CMfOngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACnsK84VyqF+Yfs+ycO6Lqy2LEdJafU0CWtjnsUk1mwCdTfswKDSihWHf9M934PbD39bgRSQyOCzovuNKh16zun"}',
+            cert="""-----BEGIN CERTIFICATE-----
+MIIEoTCCAwmgAwIBAgIJANEHdl0yo7CWMA0GCSqGSIb3DQEBCwUAMH4xCzAJBgNV
+BAYTAlVTMQswCQYDVQQIDAJDQTEUMBIGA1UEBwwLU2FudGEgQ2xhcmExGjAYBgNV
+BAoMEUludGVsIENvcnBvcmF0aW9uMTAwLgYDVQQDDCdJbnRlbCBTR1ggQXR0ZXN0
+YXRpb24gUmVwb3J0IFNpZ25pbmcgQ0EwHhcNMTYxMTIyMDkzNjU4WhcNMjYxMTIw
+MDkzNjU4WjB7MQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExFDASBgNVBAcMC1Nh
+bnRhIENsYXJhMRowGAYDVQQKDBFJbnRlbCBDb3Jwb3JhdGlvbjEtMCsGA1UEAwwk
+SW50ZWwgU0dYIEF0dGVzdGF0aW9uIFJlcG9ydCBTaWduaW5nMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqXot4OZuphR8nudFrAFiaGxxkgma/Es/BA+t
+beCTUR106AL1ENcWA4FX3K+E9BBL0/7X5rj5nIgX/R/1ubhkKWw9gfqPG3KeAtId
+cv/uTO1yXv50vqaPvE1CRChvzdS/ZEBqQ5oVvLTPZ3VEicQjlytKgN9cLnxbwtuv
+LUK7eyRPfJW/ksddOzP8VBBniolYnRCD2jrMRZ8nBM2ZWYwnXnwYeOAHV+W9tOhA
+ImwRwKF/95yAsVwd21ryHMJBcGH70qLagZ7Ttyt++qO/6+KAXJuKwZqjRlEtSEz8
+gZQeFfVYgcwSfo96oSMAzVr7V0L6HSDLRnpb6xxmbPdqNol4tQIDAQABo4GkMIGh
+MB8GA1UdIwQYMBaAFHhDe3amfrzQr35CN+s1fDuHAVE8MA4GA1UdDwEB/wQEAwIG
+wDAMBgNVHRMBAf8EAjAAMGAGA1UdHwRZMFcwVaBToFGGT2h0dHA6Ly90cnVzdGVk
+c2VydmljZXMuaW50ZWwuY29tL2NvbnRlbnQvQ1JML1NHWC9BdHRlc3RhdGlvblJl
+cG9ydFNpZ25pbmdDQS5jcmwwDQYJKoZIhvcNAQELBQADggGBAGcIthtcK9IVRz4r
+Rq+ZKE+7k50/OxUsmW8aavOzKb0iCx07YQ9rzi5nU73tME2yGRLzhSViFs/LpFa9
+lpQL6JL1aQwmDR74TxYGBAIi5f4I5TJoCCEqRHz91kpG6Uvyn2tLmnIdJbPE4vYv
+WLrtXXfFBSSPD4Afn7+3/XUggAlc7oCTizOfbbtOFlYA4g5KcYgS1J2ZAeMQqbUd
+ZseZCcaZZZn65tdqee8UXZlDvx0+NdO0LR+5pFy+juM0wWbu59MvzcmTXbjsi7HY
+6zd53Yq5K244fwFHRQ8eOB0IWB+4PfM7FeAApZvlfqlKOlLcZL2uyVmzRkyR5yW7
+2uo9mehX44CiPJ2fse9Y6eQtcfEhMPkmHXI01sN+KwPbpA39+xOsStjhP9N1Y1a2
+tQAVo+yVgLgV2Hws73Fc0o3wC78qPEA+v2aRs/Be3ZFDgDyghc/1fgU+7C+P6kbq
+d4poyb6IW8KCJbxfMJvkordNOgOUUxndPHEi/tb/U7uLjLOgPA==
+-----END CERTIFICATE-----""",
+            report_sig='3f3292e6be8744e862c257fc4bdf92980c143ad283f76a474815e9c3c81a74401869bc765faa10bf99f1a55e6869ac42f1354cc3b2ecc2c064640e75f41f1397363e013ee720e8e2a4f69e4314228ad5524ade7a5e90b10d907d742b57e07f36e3b9b6ca622647360dae983275e2f8c8968631d492b6f39dced56ddae71b28ccfa3ecae3fd111b28978576b48a2a53ec8c60464be3a14cdf4ec0260a20887e8f075b2b5b1019d7ad44b54449cacc65edf758281b43b0f0dce87bdd51a22f1008946499f26f879238303e7a4672563e686bffc37566b2718251b264654bb2bcde1cedf8a8c7d17e7ea20d6ab8dfc423f9f845bbedcd047f4c162f851f0570105c',
+            quote='AgAAANoKAAAHAAYAAAAAABYB+Vw5ueowf+qruQGtw+7ozmfz1+prDeTtEejsxfD2BAT/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAKd/uOYO4yIKSs1C5R7ERnvFsAWlEIfKC1WDTy78jYn/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACD1xnnferKFHD2uvYqTXdDA8iZ22kCD5xw7h38CMfOngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABqqWyhBhDNKcjoX/oIuJ03aLuV+EZooOQQw1bxWu6Gm8gvAkNlhWs5SMlnQXDk2q+us6uDqiJJx/a857rTbcoxqAIAAKJ2S2nRiQ4DPaeyiEu+r2E//U/7YduZyiEu0hN/0uo/c4YJokynkAiifayPjOgMtU1QrrnF/CzaeJLCTjTbNHFWhRRg4FcXnItlm16MfTSwzkD3nqhCAvIk2paxRyvl0aIBLxKdFWuoAcysBN6EmH+jx+tOmTGR1GuValCOoJier38vTW00EPDNV0bjvqPYOTLLv07XWIQScj/DfP4nSCP9qnpFV9rdFKgL55C4WEMhL8YjY8a3mvFBqqt++N/75G18sa/BrBCtutoRD6EHm5C6+2TBXZkOGd9eFBBgKOuq6adpaZAHesW6n/EZjk8w0iN0QDUU9chGUyVOImgAa7fEUu391FuQ2xSxxNzvkIMnqPc5vfbsLX4zCePrlt7RxNGtyWjjiGOSNx5gk2gBAACm+9bMkN8XW9Hw0cJS2vjzYcpKb6RAq7UYZcd6gwE4YNj8J3a+H6kYKonHtDO7eM6lk8w0ePHrx4jsbNYtyVL2qLQXr56uO3WitfHnELRL90srOmFM9vqmAtAEU6iM/BzFGk6emTry4XmS/SmlANQkX3qI9q+ufN080QSnWOMk5CfWurrBWWsbp9pfT/R8cjLOQMVHBNZUCHLhyamAaNNlpT5KfCj4rv8FJ10t8tEmv5PsXTxUUAKz7xkNtboIUf1hObcG+UJ4NaI7NKdBa/VA1hXU5fGqIUnD9BOtJHkctdcCQ3sQ9AoxyPilco90sjwVtwxuBVQd1SQzvwS+GC8kv2lqpg5re4/1rEThxrbdI4M0pG+9BxYOxEUfUIQon2jze2+wo8CiQSpLXnwrQg95PNIdXLeGRypK9BtjnhT+s69XgNAy/HvACdYelAXVkp2Jk5SnVOgiztHgizqnNRSfeFniIThYoXI2lo65cLXBlu46DKcmpNDT'
+        )
+    ]
     return workers_data
 
 
 @pytest.fixture
-def worker(contract, account, workers_data, token_contract):
-    for worker_data in workers_data:
+def principal_data():
+    return dict(
+        signing_priv_key='cf389bf0b861c1cb8906dfbad20db57ccd97ee8027f059fa00f604e6227f99c2',
+        report='{"id":"306286860802364519834752506973858673005","timestamp":"2018-06-12T17:10:19.129261","isvEnclaveQuoteStatus":"OK","isvEnclaveQuoteBody":"AgAAANoKAAAHAAYAAAAAABYB+Vw5ueowf+qruQGtw+72HPtcKCz63mlimVbjqbE5BAT/////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAKXBP5WZBuLjmngKZ8zzQ2A00leTJBcp9oYT2CDXSNHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACD1xnnferKFHD2uvYqTXdDA8iZ22kCD5xw7h38CMfOngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8G0ljp2XaOXVtOPvA5tngv93F4PXnPFqA6ZnYt5BGhhPYTqeilJHAoMpungy+sJPzQDOLm3hiqQ34tUBCfn2p"}',
+        cert="""-----BEGIN CERTIFICATE-----
+MIIEoTCCAwmgAwIBAgIJANEHdl0yo7CWMA0GCSqGSIb3DQEBCwUAMH4xCzAJBgNV
+BAYTAlVTMQswCQYDVQQIDAJDQTEUMBIGA1UEBwwLU2FudGEgQ2xhcmExGjAYBgNV
+BAoMEUludGVsIENvcnBvcmF0aW9uMTAwLgYDVQQDDCdJbnRlbCBTR1ggQXR0ZXN0
+YXRpb24gUmVwb3J0IFNpZ25pbmcgQ0EwHhcNMTYxMTIyMDkzNjU4WhcNMjYxMTIw
+MDkzNjU4WjB7MQswCQYDVQQGEwJVUzELMAkGA1UECAwCQ0ExFDASBgNVBAcMC1Nh
+bnRhIENsYXJhMRowGAYDVQQKDBFJbnRlbCBDb3Jwb3JhdGlvbjEtMCsGA1UEAwwk
+SW50ZWwgU0dYIEF0dGVzdGF0aW9uIFJlcG9ydCBTaWduaW5nMIIBIjANBgkqhkiG
+9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqXot4OZuphR8nudFrAFiaGxxkgma/Es/BA+t
+beCTUR106AL1ENcWA4FX3K+E9BBL0/7X5rj5nIgX/R/1ubhkKWw9gfqPG3KeAtId
+cv/uTO1yXv50vqaPvE1CRChvzdS/ZEBqQ5oVvLTPZ3VEicQjlytKgN9cLnxbwtuv
+LUK7eyRPfJW/ksddOzP8VBBniolYnRCD2jrMRZ8nBM2ZWYwnXnwYeOAHV+W9tOhA
+ImwRwKF/95yAsVwd21ryHMJBcGH70qLagZ7Ttyt++qO/6+KAXJuKwZqjRlEtSEz8
+gZQeFfVYgcwSfo96oSMAzVr7V0L6HSDLRnpb6xxmbPdqNol4tQIDAQABo4GkMIGh
+MB8GA1UdIwQYMBaAFHhDe3amfrzQr35CN+s1fDuHAVE8MA4GA1UdDwEB/wQEAwIG
+wDAMBgNVHRMBAf8EAjAAMGAGA1UdHwRZMFcwVaBToFGGT2h0dHA6Ly90cnVzdGVk
+c2VydmljZXMuaW50ZWwuY29tL2NvbnRlbnQvQ1JML1NHWC9BdHRlc3RhdGlvblJl
+cG9ydFNpZ25pbmdDQS5jcmwwDQYJKoZIhvcNAQELBQADggGBAGcIthtcK9IVRz4r
+Rq+ZKE+7k50/OxUsmW8aavOzKb0iCx07YQ9rzi5nU73tME2yGRLzhSViFs/LpFa9
+lpQL6JL1aQwmDR74TxYGBAIi5f4I5TJoCCEqRHz91kpG6Uvyn2tLmnIdJbPE4vYv
+WLrtXXfFBSSPD4Afn7+3/XUggAlc7oCTizOfbbtOFlYA4g5KcYgS1J2ZAeMQqbUd
+ZseZCcaZZZn65tdqee8UXZlDvx0+NdO0LR+5pFy+juM0wWbu59MvzcmTXbjsi7HY
+6zd53Yq5K244fwFHRQ8eOB0IWB+4PfM7FeAApZvlfqlKOlLcZL2uyVmzRkyR5yW7
+2uo9mehX44CiPJ2fse9Y6eQtcfEhMPkmHXI01sN+KwPbpA39+xOsStjhP9N1Y1a2
+tQAVo+yVgLgV2Hws73Fc0o3wC78qPEA+v2aRs/Be3ZFDgDyghc/1fgU+7C+P6kbq
+d4poyb6IW8KCJbxfMJvkordNOgOUUxndPHEi/tb/U7uLjLOgPA==
+-----END CERTIFICATE-----""",
+        report_sig='368a9bb191b5552c53980f36269b05af127acd4c522a6e9af74534b81c1d7d9097b45703603b67139ec8c77d4c5eded86700ab947e9e429b18c80169c28be08206b55028b8c22ba73afaaed1334e78e96c0c1c690856470e509aa46634a75e976ac5d7ff06ba09f987e67020c2c245ba09d9beb873ae7b19bce49fe631e6d782f3a01e02ef95ef7dc32f13be4de4b9b6958e1b5a76349e2c522a0153859a826ff1354f12b37a1fa42b7ac03ee64e0987453b3a74bbab65d54093801ba76be48ba16e7fe839fc8a219bffdaa9ad15c23a052eb6c9a81102183022c1f98fe661f5154bc60a0ea6842fb64ccb240320ab9c93f9986e4ca24a2b859b305e18dc2b99',
+        quote='x'
+    )
+
+
+@pytest.fixture
+def principal(w3, contract, principal_data, token_contract):
+    priv_bytes = bytearray.fromhex(principal_data['signing_priv_key'])
+    priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
+    pub = priv.get_verifying_key().to_string()
+    address = '0x' + Web3.sha3(hexstr=pub.hex()).hex()[-40:]
+
+    account = w3.personal.listAccounts[9]
+    principal = Worker(
+        account=account,
+        contract=contract,
+        token=token_contract,
+        ecdsa_address=address,
+        quote=principal_data['quote'],
+    )
+    yield principal
+
+
+@pytest.fixture
+def worker(w3, contract, workers_data, token_contract):
+    for index, worker_data in enumerate(workers_data):
         priv_bytes = bytearray.fromhex(worker_data['signing_priv_key'])
         priv = SigningKey.from_string(priv_bytes, curve=SECP256k1)
         pub = priv.get_verifying_key().to_string()
+        address = '0x' + Web3.sha3(hexstr=pub.hex()).hex()[-40:]
 
+        account = w3.personal.listAccounts[index]
         worker = Worker(
             account=account,
             contract=contract,
             token=token_contract,
-            ecdsa_pubkey=pub,
+            ecdsa_address=address,
             quote=worker_data['quote'],
         )
         yield worker
+
 
 @pytest.fixture
 def report():

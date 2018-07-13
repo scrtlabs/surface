@@ -6,14 +6,13 @@ from web3 import Web3
 from surface.communication.ethereum.utils import parse_arg_types, event_data
 from surface.communication.ias import Quote
 import rlp
-from eth_keys import keys
 
 log = Logger('Worker')
 
 
 class Worker:
     # TODO: we should have the report only once, we can remove the quote from init
-    def __init__(self, account, contract, token, ecdsa_pubkey,
+    def __init__(self, account, contract, token, ecdsa_address,
                  quote: Quote = ''):
         """
         The worker is in charge of managing the tasks and talking to core.
@@ -25,9 +24,7 @@ class Worker:
         self.account = account
         self.contract = contract
         self.token = token
-        self._ecdsa_pubkey = keys.PublicKey(ecdsa_pubkey)
-
-        self.signer = self._ecdsa_pubkey.to_checksum_address()
+        self.ecdsa_address = Web3.toChecksumAddress(ecdsa_address)
 
         self._quote = quote
         self.encoded_report = None
@@ -36,10 +33,6 @@ class Worker:
     @property
     def quote(self):
         return self._quote
-
-    @property
-    def ecdsa_pubkey(self):
-        return self._ecdsa_pubkey.to_hex()
 
     @property
     def workers_params(self):
@@ -102,10 +95,12 @@ class Worker:
         :return:
         """
         log.info('registering account: {}'.format(self.account))
-
+        log.info('registering Report: {}'.format(report))
         encoded_report = rlp.encode([report, report_cert, sig])
+        log.info('encoded Report: {}'.format(encoded_report))
+
         tx = self.contract.functions.register(
-            self.signer, encoded_report
+            self.ecdsa_address, encoded_report
         ).transact({'from': self.account})
 
         return tx
@@ -167,7 +162,7 @@ class Worker:
 
         return tx
 
-    def commit_results(self, secret_contract, task_id, data, sig):
+    def commit_results(self, task_id, data, sig, block_number):
         """
         Commiting the computation results onchain.
 
@@ -178,18 +173,15 @@ class Worker:
         :return:
         """
         output = dict(
-            secret_contract=secret_contract,
-            task_id=task_id,
+            block_number=block_number,
+            task_id=task_id.hex(),
             data=data,
-            sig=sig
+            sig=sig,
+            contract_address=self.contract.address
         )
-        log.info(
-            'committing results for task: {}'.format(
-                output
-            )
-        )
+        log.info('committing results for task: {}'.format(output))
         tx = self.contract.functions.commitResults(
-            secret_contract, task_id, data, sig
+            task_id, data, sig, block_number
         ).transact({'from': self.account})
 
         return tx

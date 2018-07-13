@@ -130,14 +130,23 @@ def cast_arg(arg_type, arg):
         return arg
 
 
-def unlock_wallet(provider):
+def unlock_wallet(provider, account_n=None):
     w3 = Web3(HTTPProvider(provider))
     w3.eth.enable_unaudited_features()
 
-    account = w3.personal.listAccounts[0]
+    if account_n is None:
+        try:
+            account = input('Enter your account address: ')
+        except ValueError:
+            raise ValueError(
+                'Please enter a valid account address for the specified '
+                'network.')
 
-    unlock = False
-    while not unlock:
+    else:
+        account = w3.personal.listAccounts[account_n]
+
+    unlock = (account_n is None)
+    while unlock:
         try:
             passhrase = getpass.getpass(
                 'Enter your the passphrase for account: ' + account + '\n')

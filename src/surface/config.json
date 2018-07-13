@@ -1,7 +1,8 @@
 {
-  "PROVIDER_URL": "http://localhost:9545",
-  "CONTRACT_PATH": "../../../coin-mixer-poc/dapp/build/contracts/Enigma.json",
-  "TOKEN_PATH": "../../../coin-mixer-poc/dapp/build/contracts/EnigmaToken.json",
+  "PROVIDER_URL": "http://localhost:8545",
+  "IPC_CONNSTR": "localhost:5554",
+  "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
+  "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
   "DATADIR": "~/.enigma",
-  "IAS_PROXY": "https://sgx.enigma.co:5000/api"
+  "IAS_PROXY": "https://sgx.enigma.co/api"
 }

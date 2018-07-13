@@ -3,6 +3,7 @@
   "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
   "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
   "COIN_MIXER_PATH": "../../../enigma-contract/build/contracts/CoinMixer.json",
+  "BILLIONARE_PATH": "../../../enigma-contract/build/contracts/Billionare.json",
   "DATADIR": "~/.enigma",
   "SIGN_KEY": "./keys/core_priv_key.pem",
   "SIGN_PUB_KEY": "./keys/core_pub_key.pem",

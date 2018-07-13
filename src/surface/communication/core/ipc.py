@@ -6,22 +6,24 @@ from logbook import Logger
 
 
 log = Logger('Node')
+
+
 # TODO: Check for errors in all of the JSON responses
 
 
 class IPC:
-    IP = 'localhost'
     GET_REPORT = 'getreport'.encode()
     GET_PUB_KEY = 'getpubkey'.encode()
     EXEC_EVM = 'execevm'
 
-    def __init__(self, port=1338):
+    def __init__(self, host='localhost', port='5552'):
+        self.host = host
         self.port = port
         context = zmq.Context()
         self.socket = context.socket(zmq.REQ)
 
     def connect(self):
-        address = 'tcp://' + IPC.IP + ':' + str(self.port)
+        address = 'tcp://' + self.host + ':' + self.port
         log.info('Connecting via zmq to: {}'.format(address))
         self.socket.connect(address)
 
@@ -49,7 +51,8 @@ class IPC:
         results = self.socket.recv_multipart()
         return results[0], results[-1]
 
-    def exec_evm(self, bytecode, callable, callable_args, preprocessors, callback):
+    def exec_evm(self, bytecode, callable, callable_args, preprocessors,
+                 callback):
         """
         Pass to core the following:
         1. the bytecode of the contract
@@ -72,6 +75,7 @@ class IPC:
                 'callable_args': callable_args,
                 'preprocessors': preprocessors,
                 'callback': callback}
+        log.debug('Sending To EVM:{}'.format(args))
         self.socket.send_json(args)
         output = self.socket.recv_json()
         sig = output['signature']

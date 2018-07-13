@@ -58,7 +58,21 @@ if config is None:
     default=config['PROVIDER_URL'],
     help='The Ethereum HTTP provider (e.g. http://localhost:8545).',
 )
-def start(dev_account, ipc_connstr, provider_url):
+@click.option(
+    '--ias-proxy',
+    default=config['IAS_PROXY'],
+    help='The Intel Attestation Service Proxy URL'
+         ' (e.g. https://sgx.enigma.co/api).',
+)
+@click.option(
+    '--simulation',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Set this to disable SGX Hardware mode. you'll need to compile "
+         "enigma-core in simulation mode too"
+)
+def start(dev_account, ipc_connstr, provider_url, ias_proxy, simulation):
     log.info('Starting up node.')
 
     if dev_account is None:
@@ -70,11 +84,18 @@ def start(dev_account, ipc_connstr, provider_url):
     core_socket.connect()
     results_json = core_socket.get_report()
     signing_address = results_json['address']
-    quote = ias.Quote.from_enigma_proxy(
-        results_json['quote'], server=config['IAS_PROXY'])
+
+    if not simulation:
+        quote = ias.Quote.from_enigma_proxy(
+            results_json['quote'], server=ias_proxy)
+        log.info('ECDSA Signing address from Quote: {}'.format(
+            quote.report_body.report_data.rstrip(b'\x00').decode()))
+        report, sig, cert = quote.serialize()
+    else:
+        quote = ias.Quote()
+        report, sig, cert = b'simulation', b'simulation', b'simulation'
 
     log.info('ECDSA Signing address: {}'.format(signing_address))
-    log.info('ECDSA Signing address from Quote: {}'.format(quote.report_body.report_data.rstrip(b'\x00').decode()))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account_n = int(dev_account) if dev_account is not None else None
@@ -93,7 +114,6 @@ def start(dev_account, ipc_connstr, provider_url):
         ecdsa_address=signing_address,
         quote=quote)
 
-    report, sig, cert = quote.serialize()
     tx = worker.register(
         report=report,
         sig=sig,

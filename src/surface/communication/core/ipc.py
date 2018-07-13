@@ -1,6 +1,10 @@
-import zmq
+import re
 import json
+
+import zmq
 from logbook import Logger
+
+
 log = Logger('Node')
 # TODO: Check for errors in all of the JSON responses
 
@@ -22,11 +26,21 @@ class IPC:
         self.socket.connect(address)
 
     def get_report(self, *args):
-        log.info('Asking Core for SGX Report')
-        a = {"cmd": "getregister"}
-        self.socket.send_string(json.dumps(a))
-        report_key_json = self.socket.recv_json()
-        log.info(report_key_json)
+        attempts=3
+        while(attempts):
+            log.info('Asking Core for SGX Report')
+            a = {"cmd": "getregister"}
+            self.socket.send_string(json.dumps(a))
+            report_key_json = self.socket.recv_json()
+            log.info(report_key_json)
+            # Will match only if reporat contains all As
+            m = re.search('[A]*', report_key_json['quote'])
+            if(m.group(0) == d['quote']):
+                attempt -= 1
+                log.info('Quote was faulty, trying again. Attempt {} of '
+                         '3...'.format(3-attempt))
+            else:
+                break
         return report_key_json
 
     def get_key(self, *args):

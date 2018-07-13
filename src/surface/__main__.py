@@ -50,7 +50,7 @@ if config is None:
 )
 @click.option(
     '--ipc-connstr',
-    default=config['IPC_CONNSTR'],
+    default='{}:{}'.format(config['IPC_HOST'], config['IPC_PORT']),
     help='The Core connection string as [host]:[port] (e.g. localhost:5552).',
 )
 @click.option(

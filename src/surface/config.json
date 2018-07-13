@@ -1,6 +1,7 @@
 {
   "PROVIDER_URL": "http://localhost:8545",
-  "IPC_CONNSTR": "localhost:5554",
+  "IPC_HOST": "localhost",
+  "IPC_PORT": "5552",
   "CONTRACT_PATH": "../../../enigma-contract/build/contracts/Enigma.json",
   "TOKEN_PATH": "../../../enigma-contract/build/contracts/EnigmaToken.json",
   "DATADIR": "~/.enigma",

@@ -1,6 +1,9 @@
-import zmq
+import re
 import json
+
+import zmq
 from logbook import Logger
+
 
 log = Logger('Node')
 
@@ -25,11 +28,21 @@ class IPC:
         self.socket.connect(address)
 
     def get_report(self, *args):
-        log.info('Asking Core for SGX Report')
-        a = {"cmd": "getregister"}
-        self.socket.send_string(json.dumps(a))
-        report_key_json = self.socket.recv_json()
-        log.info(report_key_json)
+        attempts = 3
+        while(attempts):
+            log.info('Asking Core for SGX Report')
+            a = {"cmd": "getregister"}
+            self.socket.send_string(json.dumps(a))
+            report_key_json = self.socket.recv_json()
+            log.info(report_key_json)
+            # Will match only if reporat contains all As
+            m = re.search('[A]*', report_key_json['quote'])
+            if(m.group(0) == report_key_json['quote']):
+                attempts -= 1
+                log.info('Quote was faulty, trying again. Attempt {} of '
+                         '3...'.format(3-attempts))
+            else:
+                break
         return report_key_json
 
     def get_key(self, *args):
@@ -43,10 +56,12 @@ class IPC:
         """
         Pass to core the following:
         1. the bytecode of the contract
-        2. the signature of the function. e.g "mixAddresses(uint,address[],uint)"
+        2. the signature of the function.
+           e.g "mixAddresses(uint,address[],uint)"
         3. list of RLP encoded encrypted inputs.
         4. the preprocessors
-        5. the signature of the callback function. e.g. "distribute(uint32,address[])"
+        5. the signature of the callback function.
+           e.g. "distribute(uint32,address[])"
 
         Get from core:
         1. The output of the computation encoded for the callback.

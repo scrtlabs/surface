@@ -35,10 +35,10 @@ class Quote(object):
 
         elif response_report is not None:
             if self.verify_report(response_report):
-                response_report['report'] = json.loads(
+                response_report_dict = json.loads(
                     response_report['report'])
                 data = base64.b64decode(
-                    response_report['report']['isvEnclaveQuoteBody'])
+                    response_report_dict['isvEnclaveQuoteBody'])
                 self._build_quote(data)
                 object.__setattr__(self, 'report', response_report['report'])
                 object.__setattr__(self, 'sig', response_report['signature'])
@@ -112,7 +112,7 @@ class Quote(object):
         return True
 
     def serialize(self):
-        report = json.dumps(self.report, separators=(',', ':'))
+        report = self.report
         sig = bytes.fromhex(self.sig)
         cert = self.cert
         return report, sig, cert

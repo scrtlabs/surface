@@ -33,7 +33,7 @@ class Quote(object):
             else:
                 raise RuntimeError
 
-        else:
+        elif response_report is not None:
             if self.verify_report(response_report):
                 response_report_dict = json.loads(
                     response_report['report'])

@@ -12,55 +12,100 @@ import surface
 
 StreamHandler(sys.stdout).push_application()
 log = Logger('main')
-PACKAGE_PATH = os.path.dirname(surface.__file__)
-with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
-    # TODO: add a user config file in ~/.enigma
-    CONFIG = json.load(conf)
 
-DATADIR = os.path.expanduser(CONFIG['DATADIR'])
+PACKAGE_PATH = os.path.dirname(surface.__file__)
+enigma_path = os.path.expanduser('~/.enigma')
+config_pkg = None
+try:
+    with open(os.path.join(PACKAGE_PATH, 'config.json')) as conf:
+        config_pkg = json.load(conf)
+        if 'DATADIR' in config_pkg:
+            enigma_path = os.path.expanduser(config_pkg['DATADIR'])
+
+except Exception as e:
+    log.debug("config not found in the package directory: {}".format(e))
+
+config_user = None
+try:
+    with open(os.path.join(enigma_path, 'config.json')) as conf:
+        config_user = json.load(conf)
+
+except Exception as e:
+    log.debug("config not found in the `.enigma` directory: {}".format(e))
+
+config = {**config_pkg, **config_user} \
+    if config_pkg is not None and config_user is not None \
+    else config_user if config_user is not None \
+    else config_pkg if config_pkg is not None else None
+
+if config is None:
+    raise ValueError('Config not found in neither package nor home folder')
 
 
 @click.command()
 @click.option(
-    '--datadir',
-    default=DATADIR,
-    show_default=True,
-    help='The root data director.',
-)
-@click.option(
-    '--provider',
-    default=CONFIG['PROVIDER_URL'],
-    show_default=True,
-    help='The web3 provider url.',
-)
-@click.option(
     '--dev-account',
-    default=CONFIG['WORKER_ID'] if CONFIG['WORKER_ID'] else None,
-    show_default=True,
+    default=None,
     help='For development networks only, the account index.',
 )
-def start(datadir, provider, dev_account):
-    log.info('Starting up {} node.')
+@click.option(
+    '--ipc-connstr',
+    default='{}:{}'.format(config['IPC_HOST'], config['IPC_PORT']),
+    help='The Core connection string as [host]:[port] (e.g. localhost:5552).',
+)
+@click.option(
+    '--provider-url',
+    default=config['PROVIDER_URL'],
+    help='The Ethereum HTTP provider (e.g. http://localhost:8545).',
+)
+@click.option(
+    '--ias-proxy',
+    default=config['IAS_PROXY'],
+    help='The Intel Attestation Service Proxy URL'
+         ' (e.g. https://sgx.enigma.co/api).',
+)
+@click.option(
+    '--simulation',
+    is_flag=True,
+    default=False,
+    show_default=True,
+    help="Set this to disable SGX Hardware mode. you'll need to compile "
+         "enigma-core in simulation mode too"
+)
+def start(dev_account, ipc_connstr, provider_url, ias_proxy, simulation):
+    log.info('Starting up node.')
+
+    if dev_account is None:
+        dev_account = config['WORKER_ID'] if 'WORKER_ID' in config else None
 
     # 1.1 Talk to Core, get quote
-    core_socket = core.IPC(CONFIG['IPC_HOST'], CONFIG['IPC_PORT'])
+    ipc_host, ipc_port = ipc_connstr.split(':')
+    core_socket = core.IPC(ipc_host, ipc_port)
     core_socket.connect()
     results_json = core_socket.get_report()
     signing_address = results_json['address']
-    quote = ias.Quote.from_enigma_proxy(
-        results_json['quote'], server=CONFIG['IAS_PROXY'])
+
+    if not simulation:
+        quote = ias.Quote.from_enigma_proxy(
+            results_json['quote'], server=ias_proxy)
+        log.info('ECDSA Signing address from Quote: {}'.format(
+            quote.report_body.report_data.rstrip(b'\x00').decode()))
+        report, sig, cert = quote.serialize()
+    else:
+        quote = ias.Quote()
+        report, sig, cert = b'simulation', b'simulation', b'simulation'
+
     log.info('ECDSA Signing address: {}'.format(signing_address))
-    log.info('ECDSA Signing address from Quote: {}'.format(quote.report_body.report_data.rstrip(b'\x00').decode()))
 
     # 1.2 Commit the quote to the Enigma Smart Contract
     account_n = int(dev_account) if dev_account is not None else None
-    account, w3 = utils.unlock_wallet(provider, account_n)
+    account, w3 = utils.unlock_wallet(provider_url, account_n)
     # TODO: Need to talk on where the contract should be.
     eng_contract = utils.load_contract(
-        w3, os.path.join(PACKAGE_PATH, CONFIG['CONTRACT_PATH'])
+        w3, os.path.join(PACKAGE_PATH, config['CONTRACT_PATH'])
     )
     token_contract = utils.load_contract(
-        w3, os.path.join(PACKAGE_PATH, CONFIG['TOKEN_PATH']))
+        w3, os.path.join(PACKAGE_PATH, config['TOKEN_PATH']))
 
     worker = core.Worker(
         account=account,
@@ -69,7 +114,6 @@ def start(datadir, provider, dev_account):
         ecdsa_address=signing_address,
         quote=quote)
 
-    report, sig, cert = quote.serialize()
     tx = worker.register(
         report=report,
         sig=sig,

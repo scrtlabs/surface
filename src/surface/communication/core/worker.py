@@ -97,6 +97,7 @@ class Worker:
         log.info('registering account: {}'.format(self.account))
         log.info('registering Report: {}'.format(report))
         encoded_report = rlp.encode([report, report_cert, sig])
+        log.info('encoded Report: {}'.format(encoded_report))
 
         tx = self.contract.functions.register(
             self.ecdsa_address, encoded_report

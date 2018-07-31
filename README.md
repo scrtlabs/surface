@@ -49,6 +49,12 @@ in the `coin-mixer-poc` project.
     ```
 
 
+## Running in simulation mode 
+Simply pass the flag: 
+
+```
+--simulation
+```
 ## Running the tests
 
 To run all tests:

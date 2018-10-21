@@ -29,7 +29,6 @@ pluggy==0.6.0
 py==1.5.3
 py-ecc==1.4.2
 pycparser==2.18
-pycryptodome==3.5.1
 pyethash==0.1.27
 pyOpenSSL==17.5.0
 pysha3==1.0.2
